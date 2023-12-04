@@ -1,0 +1,42 @@
+{
+    "./Code/automated/calculator.cpp": [
+        {
+            "lineNumber": 9,
+            "columnNumber": 25,
+            "errorDescription": "expected ';' after return statement",
+            "codeSnippet": [
+                "int add(int a, int b)",
+                "{",
+                "    int result = a + b",
+                "    return result",
+                "}"
+            ]
+        },
+        {
+            "lineNumber": 5,
+            "columnNumber": 5,
+            "errorDescription": "use of undeclared identifier 'subtract'",
+            "codeSnippet": [
+                "int main()",
+                "{",
+                "    int x = 10, y = 5;",
+                "    int diff = subtract(x, y);",
+                "    return 0;",
+                "}"
+            ]
+        }
+    ],
+    "./Code/automated/string_util.cpp": [
+        {
+            "lineNumber": 7,
+            "columnNumber": 13,
+            "errorDescription": "use of undeclared identifier 'strLenght'",
+            "codeSnippet": [
+                "int stringLength(const std::string& str)",
+                "{",
+                "    return strLenght(str);",
+                "}"
+            ]
+        }
+    ]
+}
