@@ -1,3 +1,4 @@
 node_modules/
 ./Code/lib/libjob.so
 ./app
+.env
