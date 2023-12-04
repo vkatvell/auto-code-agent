@@ -1,0 +1,23 @@
+{
+  "name": "final-autonomous-code-assistant-agent-vkatvell",
+  "version": "1.0.0",
+  "description": "final lab for cs5393",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HuMIn-Game-Lab/final-autonomous-code-assistant-agent-vkatvell.git"
+  },
+  "author": "Venkat Vellanki",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HuMIn-Game-Lab/final-autonomous-code-assistant-agent-vkatvell/issues"
+  },
+  "homepage": "https://github.com/HuMIn-Game-Lab/final-autonomous-code-assistant-agent-vkatvell#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "openai": "^4.20.1"
+  }
+}
