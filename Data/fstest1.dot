@@ -1,0 +1,24 @@
+digraph {
+    {
+    node[shape="circle"];
+    compileJobData[data="{'command', 'clang++ -g -std=c++14 ./Code/automated/test.cpp -o auto_out'}"];
+    }
+    {
+    node[shape="box"];
+    compileJob;
+    compileParseJob;
+    parseOutputJob;
+    }
+    {
+    node[shape="diamond"];
+    compileJobStatus;
+    compileParseJobStatus;
+    }
+  
+  compileJob -> compileJobData;
+  compileJobStatus -> compileJob[label="compileJob output"];
+  compileParseJob -> compileJobStatus[label="failed to compile"];
+  parseOutputJob -> compileJobStatus[label="success"];
+  compileParseJobStatus -> compileParseJob[label="compileParseJob output"];
+  parseOutputJob -> compileParseJobStatus[label="success"];
+}
