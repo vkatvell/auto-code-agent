@@ -16,9 +16,9 @@ digraph {
     }
   
   compileJob -> compileJobData;
-  compileJobStatus -> compileJob[label="compileJob output"];
-  compileParseJob -> compileJobStatus[label="failed to compile"];
-  parseOutputJob -> compileJobStatus[label="success"];
-  compileParseJobStatus -> compileParseJob[label="compileParseJob output"];
-  parseOutputJob -> compileParseJobStatus[label="success"];
+  compileJobStatus -> compileJob;
+  compileParseJob -> compileJobStatus;
+  parseOutputJob -> compileJobStatus;
+  compileParseJobStatus -> compileParseJob;
+  parseOutputJob -> compileParseJobStatus;
 }

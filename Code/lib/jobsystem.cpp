@@ -317,40 +317,44 @@ nlohmann::json JobSystem::FinishJob(int jobID)
 {
     nlohmann::json response;
 
+    JobStatus jobStatus = GetJobStatus(jobID);
+
+    // Checking job status before finishing the job
+    if ((jobStatus == JOB_STATUS_NEVER_SEEN) || (jobStatus == JOB_STATUS_RETIRED))
+    {
+        response["status"] = "error";
+        response["message"] = "Waiting for Job(#:" + std::to_string(jobID) + ") - no such job in JobSystem!";
+        return response;
+    }
+
     while (!IsJobComplete(jobID))
     {
-        JobStatus jobStatus = GetJobStatus(jobID);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
-        // Checking job status before finishing the job
-        if ((jobStatus == JOB_STATUS_NEVER_SEEN) || (jobStatus == JOB_STATUS_RETIRED))
+    // Accessing the jobsCompleted deque
+    std::lock_guard<std::mutex> lockCompleted(m_jobsCompletedMutex);
+    Job *thisCompletedJob = nullptr;
+    for (auto jqIter = m_jobsCompleted.begin(); jqIter != m_jobsCompleted.end(); ++jqIter)
+    {
+        Job *someCompletedJob = *jqIter;
+        if (someCompletedJob->m_jobID == jobID)
         {
-            response["status"] = "error";
-            response["message"] = "Waiting for Job(#:" + std::to_string(jobID) + ") - no such job in JobSystem!";
-            return response;
+            // For matching jobID, delete the job from the jobsCompleted deque
+            thisCompletedJob = someCompletedJob;
+            m_jobsCompleted.erase(jqIter);
+            break;
         }
+    }
 
-        // Accessing the jobsCompleted deque
-        std::lock_guard<std::mutex> lockCompleted(m_jobsCompletedMutex);
-        Job *thisCompletedJob = nullptr;
-        for (auto jqIter = m_jobsCompleted.begin(); jqIter != m_jobsCompleted.end(); ++jqIter)
-        {
-            Job *someCompletedJob = *jqIter;
-            if (someCompletedJob->m_jobID == jobID)
-            {
-                // For matching jobID, delete the job from the jobsCompleted deque
-                thisCompletedJob = someCompletedJob;
-                m_jobsCompleted.erase(jqIter);
-                break;
-            }
-        }
-
-        if (thisCompletedJob == nullptr)
-        {
-            response["status"] = "error";
-            response["message"] = "Job #" + std::to_string(jobID) + " was status complete but not found in Completed List of jobs";
-            return response;
-        }
-
+    if (thisCompletedJob == nullptr)
+    {
+        response["status"] = "error";
+        response["message"] = "Job #" + std::to_string(jobID) + " was status complete but not found in Completed List of jobs";
+        return response;
+    }
+    else
+    {
         // Call the job's callback function
         thisCompletedJob->JobCompleteCallback();
 

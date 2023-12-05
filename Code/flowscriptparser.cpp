@@ -48,14 +48,14 @@ void FlowScriptParseJob::Execute()
             const auto &node = pair.second;
 
             nlohmann::json nodeJson;
+            nodeJson["id"] = node.id;
             nodeJson["type"] = static_cast<int>(node.type);
-            nodeJson["label"] = node.label;
 
             for (const auto &dep : node.dependencies)
             {
                 nodeJson["dependencies"].push_back(dep);
             }
-            // If node has input data, print it
+            // If node has input data
             if (!node.inputData.empty())
             {
                 nodeJson["inputData"] = node.inputData;
@@ -64,141 +64,12 @@ void FlowScriptParseJob::Execute()
             graphJson[id] = nodeJson;
         }
 
-        nlohmann::json tokensJson;
-        int i = 0;
-        for (const auto &token : tokens)
-        {
-            nlohmann::json tokenJson;
-            tokenJson["tokenType"] = token.type;
-            tokenJson["lexeme"] = token.lexeme;
-
-            tokensJson.push_back(tokenJson);
-        }
-
-        // Add tokens array to the graph JSON
-        graphJson["tokens"] = tokensJson;
-
         this->SetOutput(graphJson);
     }
     catch (const std::invalid_argument &e)
     {
         std::cerr << "Error in parsing FlowScript: " << e.what() << std::endl;
         return;
-    }
-
-    if (jobSystem != nullptr)
-    {
-        // Logic to create and queue jobs based on the parsed graph
-        // Registering job types first
-        std::set<std::string> registeredJobs;
-        for (const auto &nodePair : graph)
-        {
-            if (nodePair.second.type == FlowScriptParseJob::GraphNode::Type::Job && registeredJobs.find(nodePair.first) == registeredJobs.end())
-            {
-                auto it = jobFactories.find(nodePair.first);
-                if (it != jobFactories.end())
-                {
-                    jobSystem->RegisterJob(nodePair.first.c_str(), it->second);
-                }
-                else
-                {
-                    std::cerr << "Job type is not of valid naming convention!" << std::endl;
-                }
-
-                registeredJobs.insert(nodePair.first);
-            }
-        }
-
-        // Process all nodes and store data for Type 0 nodes
-        std::map<std::string, nlohmann::json> dataForJobs;
-        for (const auto &nodePair : graph)
-        {
-            if (nodePair.second.type == FlowScriptParseJob::GraphNode::Type::Data)
-            {
-                dataForJobs[nodePair.first] = nodePair.second.inputData;
-            }
-        }
-
-        // Create jobs and set their inputs based on dependencies
-        std::map<std::string, int> jobIds;
-        for (const auto &nodePair : graph)
-        {
-            if (nodePair.second.type == FlowScriptParseJob::GraphNode::Type::Job)
-            {
-                nlohmann::json jobInput;
-
-                // Dynamically set input based on dependencies
-                for (const auto &dep : nodePair.second.dependencies)
-                {
-                    if (dataForJobs.find(dep) != dataForJobs.end())
-                    {
-                        jobInput.merge_patch(dataForJobs[dep]); // Merge data from dependencies
-                    }
-                }
-
-                auto creationResult = jobSystem->CreateJob(nodePair.first.c_str(), jobInput);
-                int jobId = creationResult["jobId"];
-                jobIds[nodePair.first] = jobId;
-            }
-        }
-
-        // Set dependencies for jobs, considering status dependencies
-        for (const auto &nodePair : graph)
-        {
-            if (nodePair.second.type == FlowScriptParseJob::GraphNode::Type::Job)
-            {
-                for (const auto &dep : nodePair.second.dependencies)
-                {
-                    std::string actualDependency;
-
-                    if (graph[dep].type == FlowScriptParseJob::GraphNode::Type::Status)
-                    {
-                        // The parent job is the job that the status node depends on
-                        if (graph.find(dep) != graph.end())
-                        {
-                            std::string statusParentJob = graph[dep].dependencies[0]; // Assuming status node depends on one job
-                            actualDependency = statusParentJob;
-                        }
-                    }
-                    else if (graph[dep].type == FlowScriptParseJob::GraphNode::Type::Job)
-                    {
-                        actualDependency = dep;
-                    }
-
-                    if (!actualDependency.empty() && actualDependency != nodePair.first)
-                    {
-                        jobSystem->SetDependency(nodePair.first.c_str(), actualDependency.c_str());
-                    }
-                }
-            }
-        }
-
-        // Queue jobs that have dependencies only on data nodes
-        for (const auto &nodePair : graph)
-        {
-            if (nodePair.second.type == FlowScriptParseJob::GraphNode::Type::Job)
-            {
-                bool shouldQueue = true; // Flag to determine if the job should be queued
-
-                // Check the dependencies of the job
-                for (const auto &dep : nodePair.second.dependencies)
-                {
-                    if (graph[dep].type != FlowScriptParseJob::GraphNode::Type::Data)
-                    {
-                        // If any dependency is not a data node, don't queue this job
-                        shouldQueue = false;
-                        break;
-                    }
-                }
-
-                // If all dependencies are data nodes, queue the job
-                if (shouldQueue)
-                {
-                    int jobId = jobIds[nodePair.first];
-                    jobSystem->QueueJob(jobId);
-                }
-            }
-        }
     }
 }
 
