@@ -1,4 +1,12 @@
+# Node modules folder
 node_modules/
-./Code/lib/libjob.so
-./app
+
+# Environment variables
 .env
+
+# Job system library shared object
+./Code/lib/libjob.so
+
+# Executable
+app
+
