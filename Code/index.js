@@ -238,3 +238,20 @@ app.get('/response/:key', (req, res) => {
 app.listen(port, () => {
   console.log(`REST server listening on port ${port}`);
 })
+
+async function applyFixesToSourceCode(llmResponse) {
+  for (const filePath in llmResponse) {
+    let fileContent = await fs.readFile(filePath, 'utf-8');
+    let fileLines = fileContent.split('\n');
+
+    for (const change of llmResponse[filePath]) {
+      const { lineNumber, correctedCodeSnippet } = change;
+      // Apply the change - replace the line and the following lines as needed
+      fileLines.splice(lineNumber - 1, correctedCodeSnippet.length, ...correctedCodeSnippet);
+    }
+
+    // Join the modified lines and write back to the file
+    const newContent = fileLines.join('\n');
+    await fs.writeFile(filePath, newContent);
+  }
+}

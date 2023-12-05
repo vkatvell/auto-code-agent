@@ -78,21 +78,30 @@ void registerAndQueueJobs(JobSystemAPI *jobSystem, nlohmann::json &flowscriptJob
 
             for (const auto &dep : jobInfo["dependencies"])
             {
-                std::string actualDependency = dep;
+                std::string depKey = dep.get<std::string>(); // Convert to string explicitly
 
-                // Check if the dependency is a status node
-                if (flowscriptJobOutput.contains(dep) && flowscriptJobOutput[dep]["type"] == 2)
+                if (flowscriptJobOutput.find(depKey) != flowscriptJobOutput.end()) // Check if key exists
                 {
-                    if (!flowscriptJobOutput[dep]["dependencies"].empty())
+                    std::string actualDependency = depKey;
+
+                    // Check if the dependency is a status node
+                    if (flowscriptJobOutput[depKey]["type"] == 2)
                     {
-                        actualDependency = flowscriptJobOutput[dep]["dependencies"][0];
+                        if (!flowscriptJobOutput[depKey]["dependencies"].empty())
+                        {
+                            actualDependency = flowscriptJobOutput[depKey]["dependencies"][0];
+                        }
+                    }
+
+                    if (!actualDependency.empty() && actualDependency != jobName)
+                    {
+                        jobSystem->SetDependency(jobName.c_str(), actualDependency.c_str());
+                        std::cout << "Set dependency for " << jobName << " on " << actualDependency << std::endl;
                     }
                 }
-
-                if (!actualDependency.empty() && actualDependency != jobName)
+                else
                 {
-                    jobSystem->SetDependency(jobName.c_str(), actualDependency.c_str());
-                    std::cout << "Set dependency for " << jobName << " on " << actualDependency << std::endl;
+                    std::cerr << "Dependency key not found: " << depKey << std::endl;
                 }
             }
 
