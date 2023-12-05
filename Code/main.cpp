@@ -108,7 +108,8 @@ void registerAndQueueJobs(JobSystemAPI *jobSystem, nlohmann::json &flowscriptJob
             bool shouldQueue = true;
             for (const auto &dep : jobInfo["dependencies"])
             {
-                if (flowscriptJobOutput.contains(dep) && flowscriptJobOutput[dep]["type"] != 0)
+                std::string depKey = dep.get<std::string>();
+                if (flowscriptJobOutput.contains(depKey) && flowscriptJobOutput[depKey]["type"] != 0)
                 {
                     shouldQueue = false;
                     break;
