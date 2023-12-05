@@ -25,6 +25,9 @@ public:
     nlohmann::json CreateJob(const char *, nlohmann::json &);
     nlohmann::json GetJobTypes();
 
+    void StoreJobOutput(int jobID, const nlohmann::json &output);
+    nlohmann::json GetJobOutput(int jobID);
+
     void QueueJob(int jobId);
 
     void RegisterJob(const char *, std::function<Job *()>);
@@ -34,4 +37,7 @@ public:
 private:
     JobSystem *m_jobSystem;
     bool isDestroyed = false;
+
+    std::map<int, nlohmann::json> m_jobOutputs;
+    std::mutex m_jobOutputsMutex;
 };

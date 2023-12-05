@@ -1,6 +1,7 @@
 #pragma once
 #include "./lib/job.h"
 #include "flowscript_common.h"
+#include "./lib/jobsystemapi.h"
 #include <iostream>
 #include <string>
 #include <array>
@@ -12,9 +13,10 @@
 
 class FlowScriptParseJob : public Job
 {
+    JobSystemAPI *jobSystem;
 
 public:
-    FlowScriptParseJob() = default;
+    FlowScriptParseJob(JobSystemAPI *js) : jobSystem(js) {}
     ~FlowScriptParseJob(){};
 
     void Execute() override;

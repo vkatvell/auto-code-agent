@@ -75,10 +75,20 @@ void FlowScriptParseJob::Execute()
 
 void FlowScriptParseJob::JobCompleteCallback()
 {
-    // Output the JSON representation of the graph
-    std::cout << "FlowScriptParser Job " << this->GetUniqueID() << " has been completed, the output is:" << std::endl;
-    std::string jsonOuput = this->GetOutput().dump(4);
-    std::cout << jsonOuput << std::endl;
+    // // Output the JSON representation of the graph
+    // std::cout << "FlowScriptParser Job " << this->GetUniqueID() << " has been completed, the output is:" << std::endl;
+    // std::string jsonOuput = this->GetOutput().dump(4);
+    // std::cout << jsonOuput << std::endl;
+
+    nlohmann::json jsonOutput = this->GetOutput();
+    if (jobSystem != nullptr)
+    {
+        jobSystem->StoreJobOutput(this->GetUniqueID(), jsonOutput);
+    }
+    else
+    {
+        std::cout << "ERROR! No JobSystem instance!" << std::endl;
+    }
 }
 
 std::string FlowScriptParseJob::processInputData(std::string inputData)

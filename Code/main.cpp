@@ -89,8 +89,8 @@ int main(void)
     std::cout << "Registering custom flowscript parsing job\n"
               << std::endl;
 
-    jobSystem.RegisterJob("flowscriptJob", []() -> Job *
-                          { return new FlowScriptParseJob(); });
+    jobSystem.RegisterJob("flowscriptJob", [&jobSystem]() -> Job *
+                          { return new FlowScriptParseJob(&jobSystem); });
 
     // Read in the file here and create JSON object input
     std::ifstream dotFile1("./Data/fstest1.dot");
@@ -122,53 +122,74 @@ int main(void)
     std::cout << "Queuing Jobs\n"
               << std::endl;
 
-    int running = 1;
+    std::cout << "Enter job ID to finish a specific job: \n";
+    std::string jobID;
+    std::cin >> jobID;
 
-    while (running)
+    nlohmann::json flowscriptFinish = jobSystem.FinishJob(jobID);
+    std::cout << "Finishing Job " << jobID << " with result: " << flowscriptFinish.dump(4) << std::endl;
+
+    // Now retrieve the output of the finished job
+    nlohmann::json jobOutput = jobSystem.GetJobOutput(stoi(jobID));
+    if (!jobOutput.empty())
     {
-        std::string command;
-        std::cout << "Enter stop, start, finish, status, jobtypes, or destroy: \n";
-        std::cin >> command;
-
-        if (command == "stop")
-        {
-            jobSystem.Stop();
-            std::cout << "Stopping Job System" << std::endl;
-        }
-        else if (command == "destroy")
-        {
-            jobSystem.Destroy();
-            running = 0;
-            std::cout << "Destroying Job System" << std::endl;
-        }
-        else if (command == "finish")
-        {
-            std::cout << "Enter job ID to finish a specific job: \n";
-            std::string jobID;
-            std::cin >> jobID;
-
-            nlohmann::json jobResult = jobSystem.FinishJob(jobID);
-            std::cout << "Finishing Job " << jobID << " with result: " << jobResult.dump(4) << std::endl;
-        }
-        else if (command == "status")
-        {
-            std::cout << "Enter job ID to get the status of that job: \n";
-            std::string jobID;
-            std::cin >> jobID;
-
-            nlohmann::json jobStatus = jobSystem.JobStatus(jobID);
-            std::cout << "Job " << jobID << " Status: " << jobStatus.dump(4) << std::endl;
-        }
-        else if (command == "start")
-        {
-            jobSystem.Start();
-            std::cout << "Starting the Job System back up" << std::endl;
-        }
-        else if (command == "jobtypes")
-        {
-            std::cout << jobSystem.GetJobTypes().dump(4) << std::endl;
-        }
+        // Process the output, e.g., for job queuing and dependency setting
+        // enqueueJobsFromJson(jobSystem, jobOutput);
+        std::cout << "Output from FlowScript Job: " << jobOutput.dump(4) << std::endl;
+        std::cout << "Enqueuing Jobs from FlowScript Graph! " << std::endl;
     }
+    else
+    {
+        std::cerr << "No output found for Job " << jobID << std::endl;
+    }
+
+    // int running = 1;
+
+    // while (running)
+    // {
+    //     std::string command;
+    //     std::cout << "Enter stop, start, finish, status, jobtypes, or destroy: \n";
+    //     std::cin >> command;
+
+    //     if (command == "stop")
+    //     {
+    //         jobSystem.Stop();
+    //         std::cout << "Stopping Job System" << std::endl;
+    //     }
+    //     else if (command == "destroy")
+    //     {
+    //         jobSystem.Destroy();
+    //         running = 0;
+    //         std::cout << "Destroying Job System" << std::endl;
+    //     }
+    //     else if (command == "finish")
+    //     {
+    //         std::cout << "Enter job ID to finish a specific job: \n";
+    //         std::string jobID;
+    //         std::cin >> jobID;
+
+    //         nlohmann::json jobResult = jobSystem.FinishJob(jobID);
+    //         std::cout << "Finishing Job " << jobID << " with result: " << jobResult.dump(4) << std::endl;
+    //     }
+    //     else if (command == "status")
+    //     {
+    //         std::cout << "Enter job ID to get the status of that job: \n";
+    //         std::string jobID;
+    //         std::cin >> jobID;
+
+    //         nlohmann::json jobStatus = jobSystem.JobStatus(jobID);
+    //         std::cout << "Job " << jobID << " Status: " << jobStatus.dump(4) << std::endl;
+    //     }
+    //     else if (command == "start")
+    //     {
+    //         jobSystem.Start();
+    //         std::cout << "Starting the Job System back up" << std::endl;
+    //     }
+    //     else if (command == "jobtypes")
+    //     {
+    //         std::cout << jobSystem.GetJobTypes().dump(4) << std::endl;
+    //     }
+    // }
 
     return 0;
 }

@@ -58,10 +58,10 @@ public:
         m_output = output;
     }
 
-    // Get input for a job
+    // Get output for a job
     const nlohmann::json &GetOutput() const
     {
-        std::lock_guard<std::mutex> lockInput(m_outputMutex);
+        std::lock_guard<std::mutex> lockOutput(m_outputMutex);
         return m_output;
     }
 

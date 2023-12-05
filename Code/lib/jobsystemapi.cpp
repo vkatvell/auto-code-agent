@@ -87,6 +87,24 @@ nlohmann::json JobSystemAPI::FinishJob(std::string &jobID)
     return m_jobSystem->FinishJob(jobInt);
 }
 
+void JobSystemAPI::StoreJobOutput(int jobID, const nlohmann::json &output)
+{
+    std::lock_guard<std::mutex> lock(m_jobOutputsMutex);
+    m_jobOutputs[jobID] = output;
+}
+
+nlohmann::json JobSystemAPI::GetJobOutput(int jobID)
+{
+    std::lock_guard<std::mutex> lock(m_jobOutputsMutex);
+    auto it = m_jobOutputs.find(jobID);
+    if (it != m_jobOutputs.end())
+    {
+        return it->second;
+    }
+    // return empty json if no output found
+    return nlohmann::json({"error", "no output"});
+}
+
 nlohmann::json JobSystemAPI::GetJobTypes()
 {
     std::vector<std::string> jobTypes = m_jobSystem->GetAvailableJobTypes();
