@@ -1,12 +1,10 @@
 # Node modules folder
 node_modules/
-
 # Environment variables
 .env
-
-# Job system library shared object
-./Code/lib/libjob.so
-
-# Executable
+# Miscellaneous
 app
+./Code/lib/libjob.so
+.vscode/
+
 
