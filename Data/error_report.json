@@ -1,41 +1,142 @@
 {
     "./Code/automated/calculator.cpp": [
         {
-            "lineNumber": 9,
-            "columnNumber": 25,
-            "errorDescription": "expected ';' after return statement",
+            "lineNumber": 3,
+            "columnNumber": 23,
+            "errorDescription": "expected ';' at end of declaration",
             "codeSnippet": [
                 "int add(int a, int b)",
                 "{",
-                "    int result = a + b",
-                "    return result",
-                "}"
+                "    int result = a + b return result",
+                "}",
+                ""
             ]
         },
         {
-            "lineNumber": 5,
-            "columnNumber": 5,
+            "lineNumber": 10,
+            "columnNumber": 16,
             "errorDescription": "use of undeclared identifier 'subtract'",
             "codeSnippet": [
-                "int main()",
-                "{",
                 "    int x = 10, y = 5;",
+                "    int sum = add(x, y);",
                 "    int diff = subtract(x, y);",
                 "    return 0;",
                 "}"
             ]
         }
     ],
+    "./Code/automated/file_reader.cpp": [
+        {
+            "lineNumber": 6,
+            "columnNumber": 33,
+            "errorDescription": "expected ';' at end of declaration",
+            "codeSnippet": [
+                "void readFile(const std::string &filename)",
+                "{",
+                "    std::ifstream file(filename) if (!file.is_open()) return",
+                "    // Process file...",
+                "}"
+            ]
+        }
+    ],
+    "./Code/automated/geometry.cpp": [
+        {
+            "lineNumber": 3,
+            "columnNumber": 41,
+            "errorDescription": "expected ';' at end of declaration",
+            "codeSnippet": [
+                "double areaCircle(double radius)",
+                "{",
+                "    double area = 3.14 * radius * radius return area",
+                "}"
+            ]
+        }
+    ],
+    "./Code/automated/network.cpp": [
+        {
+            "lineNumber": 3,
+            "columnNumber": 12,
+            "errorDescription": "use of undeclared identifier 'initializeSocket'",
+            "codeSnippet": [
+                "int setupNetwork()",
+                "{",
+                "    return initializeSocket()",
+                "}",
+                ""
+            ]
+        },
+        {
+            "lineNumber": 3,
+            "columnNumber": 30,
+            "errorDescription": "expected ';' after return statement",
+            "codeSnippet": [
+                "int setupNetwork()",
+                "{",
+                "    return initializeSocket()",
+                "}",
+                ""
+            ]
+        },
+        {
+            "lineNumber": 9,
+            "columnNumber": 9,
+            "errorDescription": "use of undeclared identifier 'netwrokError'",
+            "codeSnippet": [
+                "{",
+                "    if (errorCode < 0)",
+                "        netwrokError = true;",
+                "}"
+            ]
+        }
+    ],
     "./Code/automated/string_util.cpp": [
         {
-            "lineNumber": 7,
-            "columnNumber": 13,
+            "lineNumber": 5,
+            "columnNumber": 12,
             "errorDescription": "use of undeclared identifier 'strLenght'",
             "codeSnippet": [
-                "int stringLength(const std::string& str)",
+                "int stringLength(const std::string &str)",
                 "{",
                 "    return strLenght(str);",
                 "}"
+            ]
+        }
+    ],
+    "./Code/automated/user_input.cpp": [
+        {
+            "lineNumber": 5,
+            "columnNumber": 12,
+            "errorDescription": "use of undeclared identifier 'parseInput'",
+            "codeSnippet": [
+                "int getUserChoice()",
+                "{",
+                "    return parseInput()",
+                "}",
+                ""
+            ]
+        },
+        {
+            "lineNumber": 5,
+            "columnNumber": 24,
+            "errorDescription": "expected ';' after return statement",
+            "codeSnippet": [
+                "int getUserChoice()",
+                "{",
+                "    return parseInput()",
+                "}",
+                ""
+            ]
+        },
+        {
+            "lineNumber": 10,
+            "columnNumber": 18,
+            "errorDescription": "use of undeclared identifier 'usrInput'",
+            "codeSnippet": [
+                "int main()",
+                "{",
+                "    int choice = usrInput;",
+                "    std::cout << \"User chose: \" << choice << std::endl;",
+                "    return 0;"
             ]
         }
     ]

@@ -76,10 +76,6 @@ void FlowScriptParseJob::Execute()
 void FlowScriptParseJob::JobCompleteCallback()
 {
     // // Output the JSON representation of the graph
-    // std::cout << "FlowScriptParser Job " << this->GetUniqueID() << " has been completed, the output is:" << std::endl;
-    // std::string jsonOuput = this->GetOutput().dump(4);
-    // std::cout << jsonOuput << std::endl;
-
     nlohmann::json jsonOutput = this->GetOutput();
     if (jobSystem != nullptr)
     {

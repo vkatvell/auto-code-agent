@@ -1,78 +1,119 @@
-// #include <iostream>
-// #include <fstream>
-// #include <string>
-// #include <thread>
-// #include <vector>
-// #include "./lib/jobsystemapi.h"
-// #include "customjob.h"
-
-// int main(void)
-// {
-//     // Create an instance of JobSystemAPI
-//     JobSystemAPI jobSystem;
-
-//     // Vector of job ids
-//     std::vector<int> jobIds;
-
-//     // Start the job system
-//     jobSystem.Start();
-
-//     // Register custom job type
-//     std::cout << "Registering custom job\n"
-//               << std::endl;
-
-//     jobSystem.RegisterJob("nodeJob", []() -> Job *
-//                           { return new CustomJob(); });
-
-//     // Create and enqueue a node job
-//     nlohmann::json nodeJobInput = {{"command", "node ./Code/index.js -file ./Data/error_report.json --ip http://localhost:4891/v1"}};
-//     nlohmann::json nodeJobCreation = jobSystem.CreateJob("nodeJob", nodeJobInput);
-//     std::cout << "Creating Node Job: " << nodeJobCreation.dump(4) << std::endl;
-//     jobIds.push_back(nodeJobCreation["jobId"]);
-
-//     for (auto id : jobIds)
-//     {
-//         jobSystem.QueueJob(id);
-//     }
-//     std::cout << "Queuing Jobs\n"
-//               << std::endl;
-
-//     int running = 1;
-
-//     while (running)
-//     {
-//         std::string command;
-//         std::cout << "Enter status or jobtypes: \n";
-//         std::cin >> command;
-
-//         if (command == "status")
-//         {
-//             std::cout << "Enter job ID to get the status of that job: \n";
-//             std::string jobID;
-//             std::cin >> jobID;
-
-//             nlohmann::json jobStatus = jobSystem.JobStatus(jobID);
-//             std::cout << "Job " << jobID << " Status: " << jobStatus.dump(4) << std::endl;
-//         }
-//         else if (command == "jobtypes")
-//         {
-//             std::cout << jobSystem.GetJobTypes().dump(4) << std::endl;
-//         }
-//     }
-
-//     return 0;
-// }
-
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <thread>
+#include <set>
 #include <vector>
 #include "./lib/jobsystemapi.h"
 #include "customjob.h"
 #include "parsingjob.h"
 #include "outputjob.h"
 #include "flowscriptparser.h"
+
+void registerAndQueueJobs(JobSystemAPI *jobSystem, nlohmann::json &flowscriptJobOutput)
+{
+    std::map<std::string, std::function<Job *()>> jobFactories = {
+        {"compileJob", []() -> Job *
+         { return new CustomJob(); }},
+        {"compileParseJob", []() -> Job *
+         { return new ParsingJob(); }},
+        {"parseOutputJob", []() -> Job *
+         { return new OutputJob(); }}};
+
+    std::set<std::string> registeredJobs;
+    std::map<std::string, int> jobIds;
+    std::map<std::string, nlohmann::json> dataNodes;
+
+    // First pass: Handle data nodes and register jobs
+    for (const auto &el : flowscriptJobOutput.items())
+    {
+        const std::string &jobName = el.key();
+        const nlohmann::json &jobInfo = el.value();
+
+        if (jobInfo["type"] == 0)
+        { // Data nodes
+            dataNodes[jobName] = jobInfo["inputData"];
+        }
+        else if (jobInfo["type"] == 1)
+        { // Executable jobs
+            if (registeredJobs.find(jobName) == registeredJobs.end())
+            {
+                auto it = jobFactories.find(jobName);
+                if (it != jobFactories.end())
+                {
+                    jobSystem->RegisterJob(jobName.c_str(), it->second);
+                    registeredJobs.insert(jobName);
+                    std::cout << "Registered job: " << jobName << std::endl;
+                }
+                else
+                {
+                    std::cerr << "Job factory not found for job: " << jobName << std::endl;
+                }
+            }
+        }
+    }
+
+    // Second pass: Create jobs and set dependencies
+    for (const auto &el : flowscriptJobOutput.items())
+    {
+        const std::string &jobName = el.key();
+        const nlohmann::json &jobInfo = el.value();
+
+        if (jobInfo["type"] == 1)
+        { // Executable jobs
+            // Set job input, considering data from data nodes
+            nlohmann::json jobInput = jobInfo.value("inputData", nlohmann::json{});
+            for (const auto &dep : jobInfo["dependencies"])
+            {
+                if (dataNodes.find(dep) != dataNodes.end())
+                {
+                    jobInput.merge_patch(dataNodes[dep]);
+                }
+            }
+
+            auto creationResult = jobSystem->CreateJob(jobName.c_str(), jobInput);
+            int createdJobId = creationResult["jobId"];
+            jobIds[jobName] = createdJobId;
+            std::cout << "Created job: " << jobName << " with ID: " << createdJobId << std::endl;
+
+            for (const auto &dep : jobInfo["dependencies"])
+            {
+                std::string actualDependency = dep;
+
+                // Check if the dependency is a status node
+                if (flowscriptJobOutput.contains(dep) && flowscriptJobOutput[dep]["type"] == 2)
+                {
+                    if (!flowscriptJobOutput[dep]["dependencies"].empty())
+                    {
+                        actualDependency = flowscriptJobOutput[dep]["dependencies"][0];
+                    }
+                }
+
+                if (!actualDependency.empty() && actualDependency != jobName)
+                {
+                    jobSystem->SetDependency(jobName.c_str(), actualDependency.c_str());
+                    std::cout << "Set dependency for " << jobName << " on " << actualDependency << std::endl;
+                }
+            }
+
+            bool shouldQueue = true;
+            for (const auto &dep : jobInfo["dependencies"])
+            {
+                if (flowscriptJobOutput.contains(dep) && flowscriptJobOutput[dep]["type"] != 0)
+                {
+                    shouldQueue = false;
+                    break;
+                }
+            }
+
+            if (shouldQueue)
+            {
+                jobSystem->QueueJob(jobIds[jobName]);
+                std::cout << "Queued job: " << jobName << std::endl;
+            }
+        }
+    }
+}
 
 int main(void)
 {
@@ -84,6 +125,9 @@ int main(void)
 
     // Start the job system
     jobSystem.Start();
+
+    // TODO create a flowscript job that writes a flowscript job from LLM in javascript
+    // TODO register that job andd queue it and run it. Then queue flowscriptJob
 
     // Register custom job type
     std::cout << "Registering custom flowscript parsing job\n"
@@ -130,65 +174,49 @@ int main(void)
     std::cout << "Finishing Job " << jobID << " with result: " << flowscriptFinish.dump(4) << std::endl;
 
     // Now retrieve the output of the finished job
-    nlohmann::json jobOutput = jobSystem.GetJobOutput(stoi(jobID));
-    if (!jobOutput.empty())
+    nlohmann::json flowscriptJobOutput = jobSystem.GetJobOutput(stoi(jobID));
+    if (!flowscriptJobOutput.empty())
     {
         // Process the output, e.g., for job queuing and dependency setting
-        // enqueueJobsFromJson(jobSystem, jobOutput);
-        std::cout << "Output from FlowScript Job: " << jobOutput.dump(4) << std::endl;
+        // std::cout << "Output from FlowScript Job: " << flowscriptJobOutput.dump(4) << std::endl;
         std::cout << "Enqueuing Jobs from FlowScript Graph! " << std::endl;
+        registerAndQueueJobs(&jobSystem, flowscriptJobOutput);
     }
     else
     {
         std::cerr << "No output found for Job " << jobID << std::endl;
     }
 
-    // int running = 1;
+    jobSystem.Destroy();
 
-    // while (running)
+    // std::string errorJsonFilePath = "./Data/error_report.json";
+    // bool errorsResolved = false;
+
+    // while (!errorsResolved)
     // {
-    //     std::string command;
-    //     std::cout << "Enter stop, start, finish, status, jobtypes, or destroy: \n";
-    //     std::cin >> command;
+    // Execute the job graph
+    // TODO registerAndQueueJobs(jobSystem, flowscriptJobOutput);
 
-    //     if (command == "stop")
-    //     {
-    //         jobSystem.Stop();
-    //         std::cout << "Stopping Job System" << std::endl;
-    //     }
-    //     else if (command == "destroy")
-    //     {
-    //         jobSystem.Destroy();
-    //         running = 0;
-    //         std::cout << "Destroying Job System" << std::endl;
-    //     }
-    //     else if (command == "finish")
-    //     {
-    //         std::cout << "Enter job ID to finish a specific job: \n";
-    //         std::string jobID;
-    //         std::cin >> jobID;
+    // Wait for parseOutputJob to complete and produce error JSON file
+    // Polling mechanism
+    // TODO waitForJobCompletion(parseOutputJobId);
 
-    //         nlohmann::json jobResult = jobSystem.FinishJob(jobID);
-    //         std::cout << "Finishing Job " << jobID << " with result: " << jobResult.dump(4) << std::endl;
-    //     }
-    //     else if (command == "status")
-    //     {
-    //         std::cout << "Enter job ID to get the status of that job: \n";
-    //         std::string jobID;
-    //         std::cin >> jobID;
+    // Execute the JavaScript job to interact with LLM and modify source files
+    // TODO executeJavaScriptJob(errorJsonFilePath);
 
-    //         nlohmann::json jobStatus = jobSystem.JobStatus(jobID);
-    //         std::cout << "Job " << jobID << " Status: " << jobStatus.dump(4) << std::endl;
-    //     }
-    //     else if (command == "start")
-    //     {
-    //         jobSystem.Start();
-    //         std::cout << "Starting the Job System back up" << std::endl;
-    //     }
-    //     else if (command == "jobtypes")
-    //     {
-    //         std::cout << jobSystem.GetJobTypes().dump(4) << std::endl;
-    //     }
+    // Read the error JSON file to check if there are still errors
+    // TODO nlohmann::json errorJson = readErrorJsonFile(errorJsonFilePath);
+
+    // TODO  Check if error JSON file indicates no more errors
+    // if (errorJson.is_null() || errorJson.empty() || allErrorsResolved(errorJson))
+    // {
+    //     errorsResolved = true;
+    // }
+    // else
+    // {
+    //     // Optionally, update the flowscriptJobOutput or other parameters based on the new errorJson
+    //     // to provide updated information to the LLM in the next iteration
+    // }
     // }
 
     return 0;
