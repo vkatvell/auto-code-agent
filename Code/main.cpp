@@ -206,19 +206,40 @@ int main(void)
         std::cerr << "No output found for Job " << jobID << std::endl;
     }
 
-    std::cout << "Registering custom Node Job" << std::endl;
+    /*
+    LLM Call node.js script
+    */
 
-    jobSystem.RegisterJob("nodeJob", []() -> Job *
+    std::cout << "Registering gptCall Job" << std::endl;
+
+    jobSystem.RegisterJob("gptCallJob", []() -> Job *
                           { return new CustomJob(); });
 
-    // Create and enqueue a node job
-    nlohmann::json nodeJobInput = {{"command", "node ./Code/index.js -file ./Data/error_report.json --ip http://localhost:4891/v1"}};
-    nlohmann::json nodeJobCreation = jobSystem.CreateJob("nodeJob", nodeJobInput);
-    std::cout << "Creating Node Job: " << nodeJobCreation.dump(4) << std::endl;
+    // Create and enqueue gptCallJob job
+    nlohmann::json gptCallJobInput = {{"command", "node ./Code/gptCall.js -file ./Data/error_report.json --ip http://localhost:4891/v1"}};
+    nlohmann::json gptCallJobCreation = jobSystem.CreateJob("gptCallJob", gptCallJobInput);
+    std::cout << "Creating Node Job: " << gptCallJobCreation.dump(4) << std::endl;
 
     std::cout << "Queuing Jobs\n"
               << std::endl;
-    jobSystem.QueueJob(nodeJobCreation["jobId"]);
+    jobSystem.QueueJob(gptCallJobCreation["jobId"]);
+
+    /*
+     Code Correction node.js script
+    */
+    std::cout << "Registering codeCorrection Job" << std::endl;
+
+    jobSystem.RegisterJob("codeCorrectionJob", []() -> Job *
+                          { return new CustomJob(); });
+
+    // Create and enqueue codeCorrection job
+    nlohmann::json codeCorrectionJobInput = {{"command", "node ./Code/codeCorrection.js -file ./Data/error_report.json --ip http://localhost:4891/v1"}};
+    nlohmann::json codeCorrectionJobCreation = jobSystem.CreateJob("codeCorrectionJob", codeCorrectionJobInput);
+    std::cout << "Creating Node Job: " << codeCorrectionJobCreation.dump(4) << std::endl;
+
+    std::cout << "Queuing Jobs\n"
+              << std::endl;
+    jobSystem.QueueJob(codeCorrectionJobCreation["jobId"]);
 
     jobSystem.Destroy();
 

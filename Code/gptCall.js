@@ -1,5 +1,4 @@
 const OpenAI = require("openai");
-const express = require("express");
 const fs = require("fs").promises;
 
 if (process.argv.length == 2) {
@@ -144,7 +143,9 @@ async function readJsonFile(path) {
 
 async function generateInitialPrompt() {
   try {
-    const json = await readJsonFile(path);
+    let json = await readJsonFile(path);
+    // Remove already corrected errors
+    json = removeCorrectedErrors(json, correctionHistory);
     const jsonString = JSON.stringify(json, null, 4);
 
     let prompt = initialPromptTemplate + jsonString;
@@ -153,12 +154,6 @@ async function generateInitialPrompt() {
     console.error("Failed to generate prompt:", err);
     return null;
   }
-}
-
-// Function for appending new errors to the prompt template
-function generatePromptWithNewErrors(newErrors) {
-  const newErrorsString = JSON.stringify(newErrors, null, 4);
-  return initialPromptTemplate + newErrorsString;
 }
 
 const openai = new OpenAI({
@@ -178,23 +173,24 @@ async function callOpenAI(prompt) {
   console.log("Calling OpenAI with prompt:", prompt);
 
   const {data: chatCompletion, response: raw } = await openai.chat.completions.create({
-    messages: [{role: req.params.role, content: prompt }],
+    messages: [{role: "user", content: prompt }],
     model: minstralOpenOrcaModel,
     max_tokens: 4000,
- }).withResponse();
+  }).withResponse();
 
-// Return the response
-chatCompletion.choices.forEach(choice => {
-  return { gptResponse: choice.message.constent }
-  // repsonseQueue.push({  key: responseKey, gptResponse: choice.message.content  })
-});
-  // return { response: "Mocked response from OpenAI" };
+  // Return the response
+  return chatCompletion.choices.map(choice => choice.message.content);
 }
 
 // Function to write response to a file
 async function writeResponseToFile(response, filename) {
   try {
-    await fs.writeFile(filename, JSON.stringify(response, null, 4));
+    if (!response) {
+      throw new Error("Response is undefined or null");
+  }
+
+  const data = JSON.stringify(response, null, 4);
+    await fs.writeFile(filename, data);
     console.log(`Response written to file: ${filename}`);
   } catch (err) {
     console.error("Error writing response to file", err);
@@ -202,29 +198,71 @@ async function writeResponseToFile(response, filename) {
   }
 }
 
-async function applyFixesToSourceCode(llmResponse) {
-  for (const filePath in llmResponse) {
-    let fileContent = await fs.readFile(filePath, 'utf-8');
-    let fileLines = fileContent.split('\n');
+const historyFilePath = './Data/correction_history.json';
 
-    for (const change of llmResponse[filePath]) {
-      const { lineNumber, correctedCodeSnippet } = change;
-      // Apply the change - replace the line and the following lines as needed
-      fileLines.splice(lineNumber - 1, correctedCodeSnippet.length, ...correctedCodeSnippet);
+// Function to read history from a file
+async function readHistoryFile() {
+    try {
+        const data = await fs.readFile(historyFilePath, 'utf8');
+        return JSON.parse(data);
+    } catch (err) {
+        // If the file doesn't exist, return an empty array
+        return [];
     }
+}
 
-    // Join the modified lines and write back to the file
-    const newContent = fileLines.join('\n');
-    await fs.writeFile(filePath, newContent);
+// Function to write history to a file
+async function writeHistoryFile(history) {
+    try {
+        const data = JSON.stringify(history, null, 4);
+        await fs.writeFile(historyFilePath, data);
+    } catch (err) {
+        console.error("Error writing history to file", err);
+        throw err;
+    }
+}
+
+// Global variable to store history of corrections
+let correctionHistory = [];
+
+// Function to update history with new corrections
+function updateHistoryWithCorrections(json, history) {
+  for (const file in json) {
+      json[file].forEach(error => {
+          const errorSignature = `${file}:${error.lineNumber}:${error.columnNumber}`;
+          if (!history.includes(errorSignature)) {
+              history.push(errorSignature);
+          }
+      });
   }
+}
+
+// Function to remove already corrected errors
+function removeCorrectedErrors(json, history) {
+  for (const file in json) {
+      json[file] = json[file].filter(error => {
+          const errorSignature = `${file}:${error.lineNumber}:${error.columnNumber}`;
+          return !history.includes(errorSignature);
+      });
+  }
+  return json;
 }
 
 // Main async function to orchestrate the operations
 async function main() {
   try {
+    // Read history from file
+    correctionHistory = await readHistoryFile();
+
     const prompt = await generateInitialPrompt();
     const response = await callOpenAI(prompt);
-    await writeResponseToFile(response, './corrected_code.json');
+    await writeResponseToFile(response, './Data/corrected_code.json');
+
+    // Update history with new corrections
+    updateHistoryWithCorrections(JSON.parse(response), correctionHistory);
+
+    // Write updated history to file
+    await writeHistoryFile(correctionHistory);
   } catch (err) {
     console.error("An error occurred:", err);
   }
