@@ -134,31 +134,32 @@ bool hasCompilationErrors(const std::string &errorReportPath)
     if (!jsonFile.is_open())
     {
         std::cerr << "ERROR: Failed to open the Error JSON file for reading!" << std::endl;
-        return true;
+        return true; // Indicates an error if file can't be opened
     }
 
-    std::cout << "Successfully opened Error Report JSON file." << std::endl;
+    std::string fileContent((std::istreambuf_iterator<char>(jsonFile)), std::istreambuf_iterator<char>());
+    jsonFile.close();
 
-    nlohmann::json errorReport;
+    if (fileContent.empty() || fileContent == "null")
+    {
+        std::cout << "No compilation errors (file is empty or contains 'null')." << std::endl;
+        return false; // No errors if file is empty or contains 'null'
+    }
+
+    std::cout << "File Content: \n"
+              << fileContent << std::endl;
+
     try
     {
-        jsonFile >> errorReport;
+        nlohmann::json errorReport = nlohmann::json::parse(fileContent);
         std::cout << "Error Report JSON parsed successfully." << std::endl;
+        return !errorReport.is_null(); // Check if parsed JSON is not null
     }
     catch (const nlohmann::json::parse_error &e)
     {
         std::cerr << "JSON parsing error: " << e.what() << std::endl;
-        jsonFile.close();
-        return true;
+        return true; // Treat parsing error as presence of errors
     }
-    jsonFile.close();
-
-    // Checking if the error_report.json is null
-    std::cout << "Checking if the error_report.json is null." << std::endl;
-    bool hasErrors = !errorReport.is_null();
-    std::cout << "Error Report JSON is " << (hasErrors ? "not null (has errors)." : "null (no errors).") << std::endl;
-
-    return hasErrors;
 }
 
 bool isFileUpdated(const std::string &filePath, const std::time_t &lastModifiedTime)
