@@ -1,10 +1,11 @@
 int add(int a, int b)
 {
-    int result = a + b return result
+    int result = a + b; return result;
 }
 
 int main()
 {
+int subtract(int a, int b);
     int x = 10, y = 5;
     int sum = add(x, y);
     int diff = subtract(x, y);

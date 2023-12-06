@@ -1,0 +1,4 @@
+Linker Error: ld: Undefined symbols:
+  subtract(int, int), referenced from:
+      _main in calculator-0e2fd2.o
+linker command failed with exit code 1 (use -v to see invocation)

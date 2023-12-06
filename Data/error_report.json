@@ -1,55 +1,9 @@
 {
-    "./Code/automated/calculator.cpp": [
+    "Linker Error": [
         {
-            "lineNumber": 3,
-            "columnNumber": 23,
-            "errorDescription": "expected ';' at end of declaration",
-            "codeSnippet": [
-                "int add(int a, int b)",
-                "{",
-                "    int result = a + b return result",
-                "}",
-                ""
-            ]
-        },
-        {
-            "lineNumber": 10,
-            "columnNumber": 16,
-            "errorDescription": "use of undeclared identifier 'subtract'",
-            "codeSnippet": [
-                "    int x = 10, y = 5;",
-                "    int sum = add(x, y);",
-                "    int diff = subtract(x, y);",
-                "    return 0;",
-                "}"
-            ]
-        }
-    ],
-    "./Code/automated/file_reader.cpp": [
-        {
-            "lineNumber": 6,
-            "columnNumber": 33,
-            "errorDescription": "expected ';' at end of declaration",
-            "codeSnippet": [
-                "void readFile(const std::string &filename)",
-                "{",
-                "    std::ifstream file(filename) if (!file.is_open()) return",
-                "    // Process file...",
-                "}"
-            ]
-        }
-    ],
-    "./Code/automated/geometry.cpp": [
-        {
-            "lineNumber": 3,
-            "columnNumber": 41,
-            "errorDescription": "expected ';' at end of declaration",
-            "codeSnippet": [
-                "double areaCircle(double radius)",
-                "{",
-                "    double area = 3.14 * radius * radius return area",
-                "}"
-            ]
+            "lineNumber": 0,
+            "columnNumber": 0,
+            "errorDescription": "ld: Undefined symbols:\n  subtract(int, int), referenced from:\n      _main in calculator-0e2fd2.o\nlinker command failed with exit code 1 (use -v to see invocation)"
         }
     ]
 }

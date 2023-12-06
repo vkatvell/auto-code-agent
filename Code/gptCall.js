@@ -35,11 +35,12 @@ let initialPromptTemplate = `Your task is to analyze a JSON object containing C+
 Guidelines:
 - For 'expected ';' after [statement]', add a semicolon at the end of the statement.
 - For 'use of undeclared identifier', if it's a function, declare it or include the correct header. If it's a misspelled variable, correct the spelling.
+- For "Linker Error", do not modify anything and just return the object as is.
 
 - Only return the JSON object with the corrections.
 - Maintain the JSON format.
 
-Example Input:
+Example 1 Input:
 {
     "./Code/automated/math_utils.cpp": [
         {
@@ -83,7 +84,7 @@ Example Input:
     ]
 }
 
-Example Output:
+Example 1 Output:
 {
     "./Code/automated/math_utils.cpp": [
         {
@@ -128,6 +129,30 @@ Example Output:
     ]
 }
 
+Example 2 Input:
+{
+  "Linker Error": [
+      {
+          "lineNumber": 0,
+          "columnNumber": 0,
+          "errorDescription": "ld: Undefined symbols:\n  subtract(int, int), referenced from:\n      _main in calculator-0e2fd2.o\nlinker command failed with exit code 1 (use -v to see invocation)"
+      }
+  ]
+}
+
+Example 2 Output:
+{
+  "Linker Error": [
+      {
+          "lineNumber": 0,
+          "columnNumber": 0,
+          "errorDescription": "ld: Undefined symbols:\n  subtract(int, int), referenced from:\n      _main in calculator-0e2fd2.o\nlinker command failed with exit code 1 (use -v to see invocation)"
+      }
+  ]
+}
+
+End of Examples
+
 Your Task:
 `;
 
@@ -162,27 +187,7 @@ const openai = new OpenAI({
 });
 
 
-// // Simulate an API call to OpenAI
-// async function callOpenAI(prompt) {
-//   // This is a placeholder for the actual API call.
-//   // In a real scenario, you would call the OpenAI API here.
-//   console.log("Calling OpenAI with prompt:", prompt);
-
-//   const {data: chatCompletion, response: raw } = await openai.chat.completions.create({
-//     messages: [{role: "user", content: prompt }],
-//     model: minstralOpenOrcaModel,
-//     max_tokens: 4000,
-//   }).withResponse();
-
-//   // Return the response
-//   return chatCompletion.choices.map(choice => choice.message.content);
-// }
-
 async function callOpenAI(prompt) {
-  // This is a placeholder for the actual API call.
-  // In a real scenario, you would call the OpenAI API here.
-  // console.log("Calling OpenAI with prompt:", prompt);
-
   const completion = await openai.chat.completions.create({
     model: "gpt-3.5-turbo-1106",
     response_format: { type: "json_object" },
