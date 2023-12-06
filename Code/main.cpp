@@ -127,6 +127,15 @@ void registerAndQueueJobs(JobSystemAPI *jobSystem, nlohmann::json &flowscriptJob
 
 int main(void)
 {
+    // Truncate the error report file at the start of the program
+    std::ofstream jsonFile("./Data/error_report.json", std::ios::out | std::ios::trunc);
+    if (!jsonFile.is_open())
+    {
+        std::cerr << "ERROR: Failed to open the JSON file for writing" << std::endl;
+        return 1; // or handle the error as appropriate
+    }
+    jsonFile.close();
+
     // Create an instance of JobSystemAPI
     JobSystemAPI jobSystem;
 
@@ -196,6 +205,20 @@ int main(void)
     {
         std::cerr << "No output found for Job " << jobID << std::endl;
     }
+
+    std::cout << "Registering custom Node Job" << std::endl;
+
+    jobSystem.RegisterJob("nodeJob", []() -> Job *
+                          { return new CustomJob(); });
+
+    // Create and enqueue a node job
+    nlohmann::json nodeJobInput = {{"command", "node ./Code/index.js -file ./Data/error_report.json --ip http://localhost:4891/v1"}};
+    nlohmann::json nodeJobCreation = jobSystem.CreateJob("nodeJob", nodeJobInput);
+    std::cout << "Creating Node Job: " << nodeJobCreation.dump(4) << std::endl;
+
+    std::cout << "Queuing Jobs\n"
+              << std::endl;
+    jobSystem.QueueJob(nodeJobCreation["jobId"]);
 
     jobSystem.Destroy();
 

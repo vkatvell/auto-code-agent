@@ -171,73 +171,36 @@ const minstralInstructModel = "mistral-7b-instruct-v0.1.Q4_0.gguf";
 const minstralOpenOrcaModel = "mistral-7b-openorca.Q4_0.gguf";
 
 
-let repsonseQueue = [];
-const MAX_RESPONSES = 10;
+// Simulate an API call to OpenAI
+async function callOpenAI(prompt) {
+  // This is a placeholder for the actual API call.
+  // In a real scenario, you would call the OpenAI API here.
+  console.log("Calling OpenAI with prompt:", prompt);
 
-const app = express();
-const port = 3000;
+  const {data: chatCompletion, response: raw } = await openai.chat.completions.create({
+    messages: [{role: req.params.role, content: prompt }],
+    model: minstralOpenOrcaModel,
+    max_tokens: 4000,
+ }).withResponse();
 
-app.use(express.json());
-
-// Check if server is up and running
-app.get("/health", (req, res) => {
-  res.send("GPT4All REST Server says hello world!");
+// Return the response
+chatCompletion.choices.forEach(choice => {
+  return { gptResponse: choice.message.constent }
+  // repsonseQueue.push({  key: responseKey, gptResponse: choice.message.content  })
 });
+  // return { response: "Mocked response from OpenAI" };
+}
 
-// POST request to prompt GPT4All and receive response
-app.post('/gpt', async (req, res) => {
+// Function to write response to a file
+async function writeResponseToFile(response, filename) {
   try {
-
-    const newErrors = req.body.newErrors;
-    let prompt;
-
-    if(newErrors) {
-      // Generate prompt with new errors for subsequent requests
-      prompt = generatePromptWithNewErrors(newErrors);
-    } else {
-      // Use the initial prompt for the first request
-      prompt = await generateInitialPrompt();
-    }
-
-    const {data: chatCompletion, response: raw } = await openai.chat.completions.create({
-      messages: [{role: req.params.role, content: prompt }],
-      model: minstralOpenOrcaModel,
-      max_tokens: 4000,
-   }).withResponse();
-
-   const responseKey = Date.now().toString();
-  
-   // Check if the queue of responses is full, and remove oldest item
-  if(repsonseQueue.length >= MAX_RESPONSES) {
-    repsonseQueue.shift();
+    await fs.writeFile(filename, JSON.stringify(response, null, 4));
+    console.log(`Response written to file: ${filename}`);
+  } catch (err) {
+    console.error("Error writing response to file", err);
+    throw err;
   }
-
-  // Add a new response to the queue
-  chatCompletion.choices.forEach(choice => {
-    repsonseQueue.push({  key: responseKey, gptResponse: choice.message.content  })
-  });
-
-  res.json({ message: "Response stored", key: responseKey, chatContents: chatCompletion.choices.map(choice => choice.message.content) });
-  } catch (error) {
-    res.status(500).send(error.toString());
-  }
-});
-
-// GET request to fetch a single response based on key
-app.get('/response/:key', (req, res) => {
-  const responseKey = req.params.key;
-  const response = repsonseQueue.find(item => item.key === responseKey);
-
-  if (response) {
-    res.json(response);
-  } else {
-    res.status(404).send('Response not found');
-  }
-});
-
-app.listen(port, () => {
-  console.log(`REST server listening on port ${port}`);
-})
+}
 
 async function applyFixesToSourceCode(llmResponse) {
   for (const filePath in llmResponse) {
@@ -255,3 +218,16 @@ async function applyFixesToSourceCode(llmResponse) {
     await fs.writeFile(filePath, newContent);
   }
 }
+
+// Main async function to orchestrate the operations
+async function main() {
+  try {
+    const prompt = await generateInitialPrompt();
+    const response = await callOpenAI(prompt);
+    await writeResponseToFile(response, './corrected_code.json');
+  } catch (err) {
+    console.error("An error occurred:", err);
+  }
+}
+
+main(); // Execute the main function
