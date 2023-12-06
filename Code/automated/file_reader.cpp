@@ -3,6 +3,6 @@
 
 void readFile(const std::string &filename)
 {
-    std::ifstream file(filename); if (!file.is_open()) return;
+    std::ifstream file(filename) if (!file.is_open()) return
     // Process file...
 }
