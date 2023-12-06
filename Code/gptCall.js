@@ -1,5 +1,6 @@
 const OpenAI = require("openai");
 const fs = require("fs").promises;
+require('dotenv').config();
 
 if (process.argv.length == 2) {
     console.error('Expected at least one argument!');
@@ -29,7 +30,7 @@ const path = (pathValue || './Data/error_report.json');
 console.log("Path to error_json file: ", `${path}`);
 console.log("IP Address: ", `${ip}\n`)
 
-let initialPromptTemplate = `Analyze a JSON object containing C++ file paths and lists of compiler errors. Each error includes lineNumber, columnNumber, errorDescription, and codeSnippet. Correct each error based on the errorDescription and return the corrections in a new JSON object with the same file path, including lineNumber, columnNumber, codeChangeDescription, and correctedCodeSnippet.
+let initialPromptTemplate = `Your task is to analyze a JSON object containing C++ file paths and lists of compiler errors. Each error includes lineNumber, columnNumber, errorDescription, and codeSnippet. Correct each error based on the errorDescription and return the corrections in a new JSON object with the same file path, including lineNumber, columnNumber, codeChangeDescription, and correctedCodeSnippet.
 
 Guidelines:
 - For 'expected ';' after [statement]', add a semicolon at the end of the statement.
@@ -157,29 +158,54 @@ async function generateInitialPrompt() {
 }
 
 const openai = new OpenAI({
-  baseURL: ip,
-  apiKey : "not needed for a local LLM",
+  apiKey : process.env.OPENAI_API_KEY,
 });
 
-// LLM Models
-const minstralInstructModel = "mistral-7b-instruct-v0.1.Q4_0.gguf";
-const minstralOpenOrcaModel = "mistral-7b-openorca.Q4_0.gguf";
 
+// // Simulate an API call to OpenAI
+// async function callOpenAI(prompt) {
+//   // This is a placeholder for the actual API call.
+//   // In a real scenario, you would call the OpenAI API here.
+//   console.log("Calling OpenAI with prompt:", prompt);
 
-// Simulate an API call to OpenAI
+//   const {data: chatCompletion, response: raw } = await openai.chat.completions.create({
+//     messages: [{role: "user", content: prompt }],
+//     model: minstralOpenOrcaModel,
+//     max_tokens: 4000,
+//   }).withResponse();
+
+//   // Return the response
+//   return chatCompletion.choices.map(choice => choice.message.content);
+// }
+
 async function callOpenAI(prompt) {
   // This is a placeholder for the actual API call.
   // In a real scenario, you would call the OpenAI API here.
-  console.log("Calling OpenAI with prompt:", prompt);
+  // console.log("Calling OpenAI with prompt:", prompt);
 
-  const {data: chatCompletion, response: raw } = await openai.chat.completions.create({
-    messages: [{role: "user", content: prompt }],
-    model: minstralOpenOrcaModel,
-    max_tokens: 4000,
-  }).withResponse();
+  const completion = await openai.chat.completions.create({
+    model: "gpt-3.5-turbo-1106",
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        "role": "system",
+        "content": "You are a helpful assistant who is good at identifying and correcting C++ compiler errors, and you are designed to output JSON."
+      },
+      {
+        "role": "user",
+        "content": prompt
+      }
+    ],
+    temperature: 0.8,
+    max_tokens: 1024,
+    top_p: 1,
+    frequency_penalty: 0,
+    presence_penalty: 0,
+  });
 
   // Return the response
-  return chatCompletion.choices.map(choice => choice.message.content);
+  console.log(completion.choices[0].message.content)
+  return completion.choices[0].message.content;
 }
 
 // Function to write response to a file
