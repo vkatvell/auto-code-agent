@@ -1,57 +1,56 @@
 {
-  "./Code/automated/calculator.cpp": [
-    {
-      "lineNumber": 3,
-      "columnNumber": 23,
-      "codeChangeDescription": "Add a semicolon at the end of the declaration.",
-      "correctedCodeSnippet": [
-        "int add(int a, int b)",
-        "{",
-        "    int result = a + b; return result;",
-        "}",
-        ""
-      ]
-    },
-    {
-      "lineNumber": 10,
-      "columnNumber": 16,
-      "codeChangeDescription": "Declare 'subtract' function or include its definition.",
-      "correctedCodeSnippet": [
-        "int add(int a, int b);",
-        "int subtract(int a, int b);",
-        "    int x = 10, y = 5;",
-        "    int sum = add(x, y);",
-        "    int diff = subtract(x, y);",
-        "    return 0;",
-        "}"
-      ]
-    }
-  ],
-  "./Code/automated/file_reader.cpp": [
-    {
-      "lineNumber": 6,
-      "columnNumber": 33,
-      "codeChangeDescription": "Add a semicolon at the end of the declaration.",
-      "correctedCodeSnippet": [
-        "void readFile(const std::string &filename)",
-        "{",
-        "    std::ifstream file(filename); if (!file.is_open()) return;",
-        "    // Process file...",
-        "}"
-      ]
-    }
-  ],
-  "./Code/automated/geometry.cpp": [
-    {
-      "lineNumber": 3,
-      "columnNumber": 41,
-      "codeChangeDescription": "Add a semicolon at the end of the declaration.",
-      "correctedCodeSnippet": [
-        "double areaCircle(double radius)",
-        "{",
-        "    double area = 3.14 * radius * radius; return area;",
-        "}"
-      ]
-    }
-  ]
+    "./Code/automated/calculator.cpp": [
+        {
+            "lineNumber": 3,
+            "columnNumber": 23,
+            "codeChangeDescription": "Add a semicolon at the end of the declaration.",
+            "correctedCodeSnippet": [
+                "int add(int a, int b)",
+                "{",
+                "    int result = a + b; return result;",
+                "}",
+                ""
+            ]
+        },
+        {
+            "lineNumber": 10,
+            "columnNumber": 16,
+            "codeChangeDescription": "Declare 'subtract' function or include its definition.",
+            "correctedCodeSnippet": [
+                "int subtract(int a, int b);",
+                "    int x = 10, y = 5;",
+                "    int sum = add(x, y);",
+                "    int diff = subtract(x, y);",
+                "    return 0;",
+                "}"
+            ]
+        }
+    ],
+    "./Code/automated/file_reader.cpp": [
+        {
+            "lineNumber": 6,
+            "columnNumber": 33,
+            "codeChangeDescription": "Add a semicolon at the end of the declaration.",
+            "correctedCodeSnippet": [
+                "void readFile(const std::string &filename)",
+                "{",
+                "    std::ifstream file(filename); if (!file.is_open()) return;",
+                "    // Process file...",
+                "}"
+            ]
+        }
+    ],
+    "./Code/automated/geometry.cpp": [
+        {
+            "lineNumber": 3,
+            "columnNumber": 41,
+            "codeChangeDescription": "Add a semicolon at the end of the declaration.",
+            "correctedCodeSnippet": [
+                "double areaCircle(double radius)",
+                "{",
+                "    double area = 3.14 * radius * radius; return area;",
+                "}"
+            ]
+        }
+    ]
 }

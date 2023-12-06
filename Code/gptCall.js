@@ -213,10 +213,19 @@ async function writeResponseToFile(response, filename) {
   try {
     if (!response) {
       throw new Error("Response is undefined or null");
-  }
+    }
 
-  const data = JSON.stringify(response, null, 4);
-    await fs.writeFile(filename, data);
+    let dataToWrite;
+    if (typeof response === 'string') {
+      // If response is a string, parse it as JSON
+      dataToWrite = JSON.parse(response);
+    } else {
+      // If response is already a JSON object
+      dataToWrite = response;
+    }
+
+    const formattedJson = JSON.stringify(dataToWrite, null, 4);
+    await fs.writeFile(filename, formattedJson);
     console.log(`Response written to file: ${filename}`);
   } catch (err) {
     console.error("Error writing response to file", err);

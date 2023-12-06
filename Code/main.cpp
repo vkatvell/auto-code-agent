@@ -197,51 +197,50 @@ int main(void)
     if (!flowscriptJobOutput.empty())
     {
         // Process the output, e.g., for job queuing and dependency setting
-        // std::cout << "Output from FlowScript Job: " << flowscriptJobOutput.dump(4) << std::endl;
         std::cout << "Enqueuing Jobs from FlowScript Graph! " << std::endl;
         registerAndQueueJobs(&jobSystem, flowscriptJobOutput);
+
+        /*
+            LLM Call node.js script
+            */
+
+        std::cout << "Registering gptCall Job" << std::endl;
+
+        jobSystem.RegisterJob("gptCallJob", []() -> Job *
+                              { return new CustomJob(); });
+
+        // Create and enqueue gptCallJob job
+        nlohmann::json gptCallJobInput = {{"command", "node ./Code/gptCall.js -file ./Data/error_report.json"}};
+        nlohmann::json gptCallJobCreation = jobSystem.CreateJob("gptCallJob", gptCallJobInput);
+        std::cout << "Creating Node Job: " << gptCallJobCreation.dump(4) << std::endl;
+
+        /*
+         Code Correction node.js script
+        */
+        std::cout << "Registering codeCorrection Job" << std::endl;
+
+        jobSystem.RegisterJob("codeCorrectionJob", []() -> Job *
+                              { return new CustomJob(); });
+
+        // Create and enqueue codeCorrection job
+        nlohmann::json codeCorrectionJobInput = {{"command", "node ./Code/codeCorrection.js"}};
+        nlohmann::json codeCorrectionJobCreation = jobSystem.CreateJob("codeCorrectionJob", codeCorrectionJobInput);
+        std::cout << "Creating Node Job: " << codeCorrectionJobCreation.dump(4) << std::endl;
+
+        std::cout << "Queuing Jobs\n"
+                  << std::endl;
+        jobSystem.QueueJob(gptCallJobCreation["jobId"]);
+
+        std::cout << "Queuing Jobs\n"
+                  << std::endl;
+        jobSystem.QueueJob(codeCorrectionJobCreation["jobId"]);
+
+        jobSystem.Destroy();
     }
     else
     {
         std::cerr << "No output found for Job " << jobID << std::endl;
     }
-
-    /*
-    LLM Call node.js script
-    */
-
-    std::cout << "Registering gptCall Job" << std::endl;
-
-    jobSystem.RegisterJob("gptCallJob", []() -> Job *
-                          { return new CustomJob(); });
-
-    // Create and enqueue gptCallJob job
-    nlohmann::json gptCallJobInput = {{"command", "node ./Code/gptCall.js -file ./Data/error_report.json --ip http://localhost:4891/v1"}};
-    nlohmann::json gptCallJobCreation = jobSystem.CreateJob("gptCallJob", gptCallJobInput);
-    std::cout << "Creating Node Job: " << gptCallJobCreation.dump(4) << std::endl;
-
-    std::cout << "Queuing Jobs\n"
-              << std::endl;
-    jobSystem.QueueJob(gptCallJobCreation["jobId"]);
-
-    /*
-     Code Correction node.js script
-    */
-    std::cout << "Registering codeCorrection Job" << std::endl;
-
-    jobSystem.RegisterJob("codeCorrectionJob", []() -> Job *
-                          { return new CustomJob(); });
-
-    // Create and enqueue codeCorrection job
-    nlohmann::json codeCorrectionJobInput = {{"command", "node ./Code/codeCorrection.js -file ./Data/error_report.json --ip http://localhost:4891/v1"}};
-    nlohmann::json codeCorrectionJobCreation = jobSystem.CreateJob("codeCorrectionJob", codeCorrectionJobInput);
-    std::cout << "Creating Node Job: " << codeCorrectionJobCreation.dump(4) << std::endl;
-
-    std::cout << "Queuing Jobs\n"
-              << std::endl;
-    jobSystem.QueueJob(codeCorrectionJobCreation["jobId"]);
-
-    jobSystem.Destroy();
 
     // std::string errorJsonFilePath = "./Data/error_report.json";
     // bool errorsResolved = false;

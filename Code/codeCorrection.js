@@ -16,36 +16,34 @@ function writeFile(filePath, data) {
 // Main function to apply corrections
 function applyCorrections() {
     const corrections = readJsonFile(correctedJsonFilePath);
-
+    
     for (const filePath in corrections) {
+        if (fs.existsSync(filePath)) {
+        console.log(`Current file path: ${filePath}`);
+
         let fileData = fs.readFileSync(filePath, 'utf8');
         let lines = fileData.split('\n');
 
         corrections[filePath].forEach(change => {
-            const lineNumber = change.lineNumber - 1; // 0-based index
-            const columnNumber = change.columnNumber - 1; // 0-based index
+            // Adjusting the line number to point to the actual line with the error
+            const errorLineNumber = change.lineNumber - 1; // 0-based index for the line with the error
+            const snippetStartLineNumber = errorLineNumber - 2; // Start of the snippet in the JSON object
 
-            const originalLine = lines[lineNumber];
-            const correctedLine = change.correctedCodeSnippet.join('\n');
-            
-            // Replace the specific part of the line based on the column number
-            if (originalLine.trim() !== correctedLine.trim()) {
-                const beforeError = originalLine.substring(0, columnNumber);
-                const afterError = originalLine.substring(columnNumber);
+            const correctedSnippet = change.correctedCodeSnippet;
 
-                // Find the position in the corrected line to start the replacement
-                const replacementStartIndex = correctedLine.indexOf(afterError);
-                const replacement = correctedLine.substring(0, replacementStartIndex);
-
-                lines[lineNumber] = beforeError + replacement + afterError;
-            } else {
-                // If the entire line is a corrected snippet, replace the line
-                lines[lineNumber] = correctedLine;
+            // Replace the lines in the source file with the corrected snippet lines
+            for (let i = 0; i < correctedSnippet.length; i++) {
+                lines[snippetStartLineNumber + i] = correctedSnippet[i];
             }
         });
 
         fileData = lines.join('\n');
         writeFile(filePath, fileData);
+            
+        } else {
+            console.error(`File not found: ${filePath}`);
+        }
+        
     }
 
     console.log('Corrections applied.');
