@@ -5,7 +5,7 @@
 #include "utils.h"
 #include "flowscriptparser.h"
 
-int main(void)
+int main(int argc, char *argv[])
 {
     // Create an instance of JobSystemAPI
     JobSystemAPI jobSystem;
@@ -16,6 +16,38 @@ int main(void)
     // TODO create a flowscript job that writes a flowscript job from LLM in javascript and writes to file fstest1.dot
     // TODO register that job and queue it and run it. Then queue flowscriptJob
 
+    // Parse command line arguments
+    std::string filePathArg;
+    if (argc > 1)
+    {
+        // First argument is the file path
+        filePathArg = argv[1];
+    }
+    else
+    {
+        throw std::runtime_error("No file path argument provided");
+    }
+
+    // Construct the command for flowscriptGenJobInput
+    std::string command = "node ./Code/flowScriptGen.js -files " + filePathArg;
+
+    std::cout << "Registering FlowScript Generation job\n"
+              << std::endl;
+    jobSystem.RegisterJob("flowscriptGenJob", []() -> Job *
+                          { return new CustomJob(); });
+
+    // Create flowscriptGen job
+    nlohmann::json flowscriptGenJobInput = {{"command", command}};
+    nlohmann::json flowscriptGenJobCreation = jobSystem.CreateJob("flowscriptGenJob", flowscriptGenJobInput);
+    std::cout << "Creating FlowScript Generation Job: " << flowscriptGenJobCreation.dump(4) << std::endl;
+
+    std::cout << "Queuing flowscriptGenJob: \n"
+              << std::endl;
+    jobSystem.QueueJob(flowscriptGenJobCreation["jobId"]);
+
+    // Introducing delay to wait for flowscript.dot file to be created
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+
     // Register flowscript parse job type
     std::cout << "Registering custom flowscript parsing job\n"
               << std::endl;
@@ -24,23 +56,23 @@ int main(void)
 
     // Read in the file here and create JSON object input
     std::string errorReportPath = "./Data/error_report.json";
-    std::ifstream dotFile1("./Data/fstest1.dot");
+    std::ifstream dotFile("./Data/flowscript.dot");
 
-    if (!dotFile1.is_open())
+    if (!dotFile.is_open())
     {
         throw std::runtime_error("Failed to open Flowscript file");
     }
 
     std::string flowscriptText;
     std::string line;
-    while (std::getline(dotFile1, line))
+    while (std::getline(dotFile, line))
     {
         flowscriptText += line;
     }
 
-    dotFile1.close();
+    dotFile.close();
 
-    // Loop until no compilation errors
+    // Begin execution of FlowScript and loop until no compilation errors
     while (true)
     {
         runFlowScript(jobSystem, flowscriptText);
