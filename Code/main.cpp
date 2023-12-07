@@ -52,6 +52,8 @@ int main(void)
         }
     }
 
+    // TODO implement a cleanup function
+
     std::cout << "Execution complete!\nDestroying the Job System.\n"
               << std::endl;
 
