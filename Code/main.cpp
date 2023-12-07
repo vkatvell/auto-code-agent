@@ -89,6 +89,8 @@ int main(int argc, char *argv[])
 
     jobSystem.Destroy();
 
+    std::cout << "Job System Destroyed!\nCleaning up files.\n"
+              << std::endl;
     // List of files to clean up
     std::vector<std::string> filesToCleanup = {
         "code_change_descriptions.txt",
