@@ -186,10 +186,10 @@ void runFlowScript(JobSystemAPI &jobSystem, const std::string &flowscriptText)
     // Create and enqueue a flowscript parse job
     nlohmann::json flowscriptJobInput = {{"flowscript", flowscriptText}};
     nlohmann::json flowscriptJobCreation = jobSystem.CreateJob("flowscriptJob", flowscriptJobInput);
-    std::cout << "Creating FlowScript Job 1: " << flowscriptJobCreation.dump(4) << std::endl;
+    std::cout << "Creating FlowScript Parse Job: " << flowscriptJobCreation.dump(4) << std::endl;
 
     jobSystem.QueueJob(flowscriptJobCreation["jobId"]);
-    std::cout << "Queuing FlowScript Job with ID: " << flowscriptJobCreation["jobId"] << std::endl;
+    std::cout << "Queuing FlowScript Parse Job with ID: " << flowscriptJobCreation["jobId"] << std::endl;
 
     std::cout << "Enter job ID to finish a specific job: \n";
     std::string jobID;
@@ -295,9 +295,9 @@ void runFlowScript(JobSystemAPI &jobSystem, const std::string &flowscriptText)
                 std::this_thread::sleep_for(std::chrono::seconds(1));
             }
 
+            // Sleep for a short duration before queuing codeCorrection job
             std::this_thread::sleep_for(std::chrono::seconds(5));
 
-            // TODO verify why the codeCorrection Job is not being executed
             std::cout << "Queuing codeCorrection Job: \n"
                       << std::endl;
             jobSystem.QueueJob(codeCorrectionJobCreation["jobId"]);

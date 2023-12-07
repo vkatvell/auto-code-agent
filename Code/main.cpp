@@ -13,13 +13,12 @@ int main(void)
     // Start the job system
     jobSystem.Start();
 
-    // TODO create a flowscript job that writes a flowscript job from LLM in javascript
-    // TODO register that job andd queue it and run it. Then queue flowscriptJob
+    // TODO create a flowscript job that writes a flowscript job from LLM in javascript and writes to file fstest1.dot
+    // TODO register that job and queue it and run it. Then queue flowscriptJob
 
-    // Register custom job type
+    // Register flowscript parse job type
     std::cout << "Registering custom flowscript parsing job\n"
               << std::endl;
-
     jobSystem.RegisterJob("flowscriptJob", [&jobSystem]() -> Job *
                           { return new FlowScriptParseJob(&jobSystem); });
 
