@@ -1,9 +1,0 @@
-{
-    "Linker Error": [
-        {
-            "lineNumber": 0,
-            "columnNumber": 0,
-            "errorDescription": "ld: Undefined symbols:\n  subtract(int, int), referenced from:\n      _main in calculator-0e2fd2.o\nlinker command failed with exit code 1 (use -v to see invocation)"
-        }
-    ]
-}

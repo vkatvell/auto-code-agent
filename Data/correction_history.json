@@ -1,7 +1,3 @@
 [
-    "./Code/automated/calculator.cpp:3:23",
-    "./Code/automated/calculator.cpp:10:16",
-    "./Code/automated/file_reader.cpp:6:33",
-    "./Code/automated/geometry.cpp:3:41",
-    "Linker Error:0:0"
+    "./Code/automated/test.cpp:4:5"
 ]

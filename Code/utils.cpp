@@ -140,10 +140,10 @@ bool hasCompilationErrors(const std::string &errorReportPath)
     std::string fileContent((std::istreambuf_iterator<char>(jsonFile)), std::istreambuf_iterator<char>());
     jsonFile.close();
 
-    if (fileContent.empty() || fileContent == "null")
+    if (fileContent == "null")
     {
-        std::cout << "No compilation errors (file is empty or contains 'null')." << std::endl;
-        return false; // No errors if file is empty or contains 'null'
+        std::cout << "No compilation errors (file contains 'null')." << std::endl;
+        return false; // No errors if file contains 'null'
     }
 
     std::cout << "File Content: \n"
@@ -234,19 +234,27 @@ void runFlowScript(JobSystemAPI &jobSystem, const std::string &flowscriptText)
         nlohmann::json codeCorrectionJobCreation = jobSystem.CreateJob("codeCorrectionJob", codeCorrectionJobInput);
         std::cout << "Creating Node Job: " << codeCorrectionJobCreation.dump(4) << std::endl;
 
+        std::cout << "Queuing gptCall Job: \n"
+                  << std::endl;
         jobSystem.QueueJob(gptCallJobCreation["jobId"]);
 
-        // Polling for file update
+        // Introduce a short delay before starting the polling
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
+        // Polling for gptCall job completion
         std::string correctedCodePath = "./Data/corrected_code.json";
         std::string correctionHistoryPath = "./Data/correction_history.json";
-        std::time_t lastModifiedTime = 0; // Initialize with a baseline (e.g., current time)
-
-        // Polling loop
+        std::time_t lastModifiedTime = 0;
+        // Polling loop for gptCall job
         while (true)
         {
+            std::cout << "In polling loop: \n"
+                      << std::endl;
             // Check if either file is updated
             if (isFileUpdated(correctedCodePath, lastModifiedTime) || isFileUpdated(correctionHistoryPath, lastModifiedTime))
             {
+                std::cout << "File has been modified, breaking out of loop: \n"
+                          << std::endl;
                 // Exit loop if files are updated
                 break;
             }
@@ -254,8 +262,29 @@ void runFlowScript(JobSystemAPI &jobSystem, const std::string &flowscriptText)
             // Sleep for a short duration before next check
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-
+        std::cout << "Queuing codeCorrection Job: \n"
+                  << std::endl;
         jobSystem.QueueJob(codeCorrectionJobCreation["jobId"]);
+
+        // Polling for codeCorrection job completion
+        std::string codeChangeDescriptionPath = "./Data/code_change_descriptions.txt";
+        std::time_t lastModifiedTimeCodeChange = 0;
+
+        // Polling loop for codeCorrection job
+        while (true)
+        {
+            std::cout << "Polling for codeCorrection job completion: \n"
+                      << std::endl;
+            if (isFileUpdated(codeChangeDescriptionPath, lastModifiedTimeCodeChange))
+            {
+                std::cout << "code_change_descriptions.txt file has been modified, breaking out of loop: \n"
+                          << std::endl;
+                break; // Exit loop if file is updated
+            }
+
+            // Sleep for a short duration before next check
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
     }
     else
     {
