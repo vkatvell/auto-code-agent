@@ -1,0 +1,16 @@
+{
+    "./Code/automated/test.cpp": [
+        {
+            "lineNumber": 4,
+            "columnNumber": 5,
+            "codeChangeDescription": "Correct the spelling of 'varble' to 'variable'.",
+            "correctedCodeSnippet": [
+                "{",
+                "    int variable = 1;",
+                "    variable += 1;",
+                "    return variable;",
+                "}"
+            ]
+        }
+    ]
+}

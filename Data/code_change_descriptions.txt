@@ -1,0 +1,1 @@
+File: ./Code/automated/test.cpp, Line: 4, Column: 5, Description: Correct the spelling of 'varble' to 'variable'.

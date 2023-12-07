@@ -43,17 +43,8 @@ void CustomJob::Execute()
     }
 
     nlohmann::json jsonOutput;
-    if (output == "")
-    {
-
-        jsonOutput["status"] = "executed with no issues";
-        jsonOutput["output"] = output;
-    }
-    else
-    {
-        jsonOutput["status"] = "failed to execute";
-        jsonOutput["output"] = output;
-    }
+    jsonOutput["status"] = "completed";
+    jsonOutput["output"] = output;
 
     // Set output JSON
     this->SetOutput(jsonOutput);

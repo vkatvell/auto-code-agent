@@ -274,7 +274,7 @@ void runFlowScript(JobSystemAPI &jobSystem, const std::string &flowscriptText)
                           << std::endl;
 
                 // Check if either file is updated
-                if (isFileUpdated(correctedCodePath, lastModifiedTimeCorrectedCode) || isFileUpdated(correctionHistoryPath, lastModifiedTimeCorrectedCode))
+                if (isFileUpdated(correctedCodePath, lastModifiedTimeCorrectedCode) && isFileUpdated(correctionHistoryPath, lastModifiedTimeCorrectedCode))
                 {
                     std::cout << "File has been modified, breaking out of loop: \n"
                               << std::endl;
@@ -295,12 +295,12 @@ void runFlowScript(JobSystemAPI &jobSystem, const std::string &flowscriptText)
                 std::this_thread::sleep_for(std::chrono::seconds(1));
             }
 
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+
             // TODO verify why the codeCorrection Job is not being executed
             std::cout << "Queuing codeCorrection Job: \n"
                       << std::endl;
             jobSystem.QueueJob(codeCorrectionJobCreation["jobId"]);
-
-            std::this_thread::sleep_for(std::chrono::seconds(2));
 
             // Reset start time for the next job's timeout
             startTime = std::chrono::high_resolution_clock::now();
