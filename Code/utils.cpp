@@ -7,6 +7,7 @@
 #include <filesystem>
 #include "./lib/jobsystemapi.h"
 #include "customjob.h"
+#include "compilejob.h"
 #include "parsingjob.h"
 #include "outputjob.h"
 #include "flowscriptparser.h"
@@ -15,7 +16,7 @@ void registerAndQueueJobs(JobSystemAPI *jobSystem, nlohmann::json &flowscriptJob
 {
     std::map<std::string, std::function<Job *()>> jobFactories = {
         {"compileJob", []() -> Job *
-         { return new CustomJob(); }},
+         { return new CompileJob(); }},
         {"compileParseJob", []() -> Job *
          { return new ParsingJob(); }},
         {"parseOutputJob", []() -> Job *
@@ -128,37 +129,35 @@ void registerAndQueueJobs(JobSystemAPI *jobSystem, nlohmann::json &flowscriptJob
 
 bool hasCompilationErrors(const std::string &errorReportPath)
 {
-    std::cout << "Opening Error Report JSON file: " << errorReportPath << std::endl;
+    std::cout << "Opening Error Report JSON file: " << errorReportPath << "\n"
+              << std::endl;
 
     std::ifstream jsonFile(errorReportPath);
     if (!jsonFile.is_open())
     {
         std::cerr << "ERROR: Failed to open the Error JSON file for reading!" << std::endl;
-        return true; // Indicates an error if file can't be opened
+        return true; // Indicates an error if the file can't be opened
     }
 
+    // Check if the file is empty or contains "null"
     std::string fileContent((std::istreambuf_iterator<char>(jsonFile)), std::istreambuf_iterator<char>());
     jsonFile.close();
 
-    if (fileContent == "null")
-    {
-        std::cout << "No compilation errors (file contains 'null')." << std::endl;
-        return false; // No errors if file contains 'null'
-    }
+    // Trim leading and trailing whitespace from file content
+    fileContent.erase(0, fileContent.find_first_not_of(" \t\n\r\f\v"));
+    fileContent.erase(fileContent.find_last_not_of(" \t\n\r\f\v") + 1);
 
-    std::cout << "File Content: \n"
-              << fileContent << std::endl;
-
-    try
+    if (fileContent.empty() || fileContent == "null")
     {
-        nlohmann::json errorReport = nlohmann::json::parse(fileContent);
-        std::cout << "Error Report JSON parsed successfully." << std::endl;
-        return !errorReport.is_null(); // Check if parsed JSON is not null
+        std::cout << "No compilation errors (file is empty or contains 'null').\n"
+                  << std::endl;
+        return false; // No errors if file is empty or contains 'null'
     }
-    catch (const nlohmann::json::parse_error &e)
+    else
     {
-        std::cerr << "JSON parsing error: " << e.what() << std::endl;
-        return true; // Treat parsing error as presence of errors
+        std::cout << "Compilation errors present.\n"
+                  << std::endl;
+        return true; // Errors are present
     }
 }
 
@@ -204,88 +203,132 @@ void runFlowScript(JobSystemAPI &jobSystem, const std::string &flowscriptText)
     if (!flowscriptJobOutput.empty())
     {
         // Process the output, e.g., for job queuing and dependency setting
-        std::cout << "Enqueuing Jobs from FlowScript Graph! " << std::endl;
+        std::cout << "\nEnqueuing Jobs from FlowScript Graph! \n"
+                  << std::endl;
         registerAndQueueJobs(&jobSystem, flowscriptJobOutput);
 
-        /*
-            LLM Call node.js script
-            */
+        // Waiting for compile flow to complete and for error_report.json to be closed
+        std::this_thread::sleep_for(std::chrono::seconds(1));
 
-        std::cout << "Registering gptCall Job" << std::endl;
-
-        jobSystem.RegisterJob("gptCallJob", []() -> Job *
-                              { return new CustomJob(); });
-
-        // Create gptCallJob job
-        nlohmann::json gptCallJobInput = {{"command", "node ./Code/gptCall.js -file ./Data/error_report.json"}};
-        nlohmann::json gptCallJobCreation = jobSystem.CreateJob("gptCallJob", gptCallJobInput);
-        std::cout << "Creating Node Job: " << gptCallJobCreation.dump(4) << std::endl;
-
-        /*
-         Code Correction node.js script
-        */
-        std::cout << "Registering codeCorrection Job" << std::endl;
-
-        jobSystem.RegisterJob("codeCorrectionJob", []() -> Job *
-                              { return new CustomJob(); });
-
-        // Create codeCorrection job
-        nlohmann::json codeCorrectionJobInput = {{"command", "node ./Code/codeCorrection.js"}};
-        nlohmann::json codeCorrectionJobCreation = jobSystem.CreateJob("codeCorrectionJob", codeCorrectionJobInput);
-        std::cout << "Creating Node Job: " << codeCorrectionJobCreation.dump(4) << std::endl;
-
-        std::cout << "Queuing gptCall Job: \n"
-                  << std::endl;
-        jobSystem.QueueJob(gptCallJobCreation["jobId"]);
-
-        // Introduce a short delay before starting the polling
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-
-        // Polling for gptCall job completion
-        std::string correctedCodePath = "./Data/corrected_code.json";
-        std::string correctionHistoryPath = "./Data/correction_history.json";
-        std::time_t lastModifiedTime = 0;
-        // Polling loop for gptCall job
-        while (true)
+        // Check for compilation errors using hasCompilationErrors function
+        if (!hasCompilationErrors("./Data/error_report.json"))
         {
-            std::cout << "In polling loop: \n"
+            std::cout << "No more compilation errors. Skipping gptCallJob.\n"
                       << std::endl;
-            // Check if either file is updated
-            if (isFileUpdated(correctedCodePath, lastModifiedTime) || isFileUpdated(correctionHistoryPath, lastModifiedTime))
-            {
-                std::cout << "File has been modified, breaking out of loop: \n"
-                          << std::endl;
-                // Exit loop if files are updated
-                break;
-            }
-
-            // Sleep for a short duration before next check
-            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-
-        // TODO verify why the codeCorrection Job is not being executed
-        std::cout << "Queuing codeCorrection Job: \n"
-                  << std::endl;
-        jobSystem.QueueJob(codeCorrectionJobCreation["jobId"]);
-
-        // Polling for codeCorrection job completion
-        std::string codeChangeDescriptionPath = "./Data/code_change_descriptions.txt";
-        std::time_t lastModifiedTimeCodeChange = 0;
-
-        // Polling loop for codeCorrection job
-        while (true)
+        else
         {
-            std::cout << "Polling for codeCorrection job completion: \n"
+            /*
+        LLM Call node.js script
+        */
+            std::cout << "Registering gptCall Job\n"
                       << std::endl;
-            if (isFileUpdated(codeChangeDescriptionPath, lastModifiedTimeCodeChange))
+
+            jobSystem.RegisterJob("gptCallJob", []() -> Job *
+                                  { return new CustomJob(); });
+
+            // Create gptCallJob job
+            nlohmann::json gptCallJobInput = {{"command", "node ./Code/gptCall.js -file ./Data/error_report.json"}};
+            nlohmann::json gptCallJobCreation = jobSystem.CreateJob("gptCallJob", gptCallJobInput);
+            std::cout << "Creating Node Job: " << gptCallJobCreation.dump(4) << std::endl;
+
+            /*
+             Code Correction node.js script
+            */
+            std::cout << "Registering codeCorrection Job" << std::endl;
+
+            jobSystem.RegisterJob("codeCorrectionJob", []() -> Job *
+                                  { return new CustomJob(); });
+
+            // Create codeCorrection job
+            nlohmann::json codeCorrectionJobInput = {{"command", "node ./Code/codeCorrection.js"}};
+            nlohmann::json codeCorrectionJobCreation = jobSystem.CreateJob("codeCorrectionJob", codeCorrectionJobInput);
+            std::cout << "Creating Node Job: " << codeCorrectionJobCreation.dump(4) << std::endl;
+
+            std::cout << "Queuing gptCall Job: \n"
+                      << std::endl;
+            jobSystem.QueueJob(gptCallJobCreation["jobId"]);
+
+            // Short delay before starting the polling
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+
+            // Timeout duration is 10 seconds
+            const int timeoutDuration = 10;
+
+            // Start time for timeout calculation
+            auto startTime = std::chrono::high_resolution_clock::now();
+
+            // Polling for gptCall job completion
+            std::string correctedCodePath = "./Data/corrected_code.json";
+            std::string correctionHistoryPath = "./Data/correction_history.json";
+            std::string codeChangeDescriptionPath = "./Data/code_change_descriptions.txt";
+
+            std::time_t lastModifiedTimeCorrectedCode = std::filesystem::exists(correctedCodePath) ? std::filesystem::last_write_time(correctedCodePath).time_since_epoch().count() : 0;
+            std::time_t lastModifiedTimeCorrectionHistory = std::filesystem::exists(correctionHistoryPath) ? std::filesystem::last_write_time(correctionHistoryPath).time_since_epoch().count() : 0;
+            std::time_t lastModifiedTimeCodeChangeDescription = std::filesystem::exists(codeChangeDescriptionPath) ? std::filesystem::last_write_time(codeChangeDescriptionPath).time_since_epoch().count() : 0;
+
+            // Polling loop for gptCall job
+            while (true)
             {
-                std::cout << "code_change_descriptions.txt file has been modified, breaking out of loop: \n"
+                std::cout << "Polling for gptCall job completion..."
                           << std::endl;
-                break; // Exit loop if file is updated
+
+                // Check if either file is updated
+                if (isFileUpdated(correctedCodePath, lastModifiedTimeCorrectedCode) || isFileUpdated(correctionHistoryPath, lastModifiedTimeCorrectedCode))
+                {
+                    std::cout << "File has been modified, breaking out of loop: \n"
+                              << std::endl;
+                    // Exit loop if files are updated
+                    break;
+                }
+
+                // Check for timeout
+                auto currentTime = std::chrono::high_resolution_clock::now();
+                auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime).count();
+                if (elapsed >= timeoutDuration)
+                {
+                    std::cerr << "Timeout reached while waiting for gptCallJob.\n";
+                    break;
+                }
+
+                // Sleep for a short duration before next check
+                std::this_thread::sleep_for(std::chrono::seconds(1));
             }
 
-            // Sleep for a short duration before next check
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            // TODO verify why the codeCorrection Job is not being executed
+            std::cout << "Queuing codeCorrection Job: \n"
+                      << std::endl;
+            jobSystem.QueueJob(codeCorrectionJobCreation["jobId"]);
+
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+
+            // Reset start time for the next job's timeout
+            startTime = std::chrono::high_resolution_clock::now();
+
+            // Polling loop for codeCorrection job
+            while (true)
+            {
+                std::cout << "Polling for codeCorrection job completion..."
+                          << std::endl;
+                if (isFileUpdated(codeChangeDescriptionPath, lastModifiedTimeCodeChangeDescription))
+                {
+                    std::cout << "code_change_descriptions.txt file has been modified, breaking out of loop: \n"
+                              << std::endl;
+                    break; // Exit loop if file is updated
+                }
+
+                // Check for timeout
+                auto currentTime = std::chrono::high_resolution_clock::now();
+                auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime).count();
+                if (elapsed >= timeoutDuration)
+                {
+                    std::cerr << "Timeout reached while waiting for codeCorrectionJob.\n";
+                    break;
+                }
+
+                // Sleep for a short duration before next check
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
         }
     }
     else

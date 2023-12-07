@@ -42,16 +42,17 @@ void CompileJob::Execute()
         this->output.append(buffer.data());
     }
 
+    nlohmann::json jsonOutput;
     if (output == "")
     {
-        nlohmann::json jsonOutput;
-        jsonOutput["status"] = "compiled";
+        jsonOutput["status"] = "compiled with no errors";
         jsonOutput["output"] = output;
     }
-
-    nlohmann::json jsonOutput;
-    jsonOutput["status"] = "failed to compile";
-    jsonOutput["output"] = output;
+    else
+    {
+        jsonOutput["status"] = "failed to compile";
+        jsonOutput["output"] = output;
+    }
 
     // Set output JSON
     this->SetOutput(jsonOutput);

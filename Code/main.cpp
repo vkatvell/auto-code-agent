@@ -53,6 +53,9 @@ int main(void)
         }
     }
 
+    std::cout << "Execution complete!\nDestroying the Job System.\n"
+              << std::endl;
+
     jobSystem.Destroy();
 
     return 0;
