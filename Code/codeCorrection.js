@@ -15,6 +15,11 @@ function writeFile(filePath, data) {
     fs.writeFileSync(filePath, data, 'utf8');
 }
 
+// Appends data to a file
+function appendToFile(filePath, data) {
+    fs.appendFileSync(filePath, data, 'utf8');
+}
+
 // Main function to apply corrections
 function applyCorrections() {
     const corrections = readJsonFile(correctedJsonFilePath);
@@ -67,8 +72,8 @@ function applyCorrections() {
         
     }
 
-    // Write the collected descriptions to a separate file
-    writeFile(descriptionFilePath, descriptionData);
+    // Append the collected descriptions to the code_change_descriptions.txt file
+    appendToFile(descriptionFilePath, descriptionData);
 
     console.log('Corrections applied.');
 }
