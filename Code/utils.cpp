@@ -1,6 +1,7 @@
 #include "utils.h"
 #include <fstream>
 #include <string>
+#include <vector>
 #include <thread>
 #include <set>
 #include <chrono>
@@ -11,6 +12,25 @@
 #include "parsingjob.h"
 #include "outputjob.h"
 #include "flowscriptparser.h"
+
+void cleanupDataFiles(const std::vector<std::string> &fileNames)
+{
+    for (const auto &fileName : fileNames)
+    {
+        std::string filePath = "./Data/" + fileName;
+        std::ofstream file(filePath, std::ofstream::out | std::ofstream::trunc);
+
+        if (!file.is_open())
+        {
+            std::cerr << "Failed to open file for cleanup: " << filePath << std::endl;
+        }
+        else
+        {
+            std::cout << "Cleaned up file: " << filePath << std::endl;
+            file.close();
+        }
+    }
+}
 
 void registerAndQueueJobs(JobSystemAPI *jobSystem, nlohmann::json &flowscriptJobOutput)
 {
@@ -155,9 +175,23 @@ bool hasCompilationErrors(const std::string &errorReportPath)
     }
     else
     {
-        std::cout << "Compilation errors present.\n"
-                  << std::endl;
-        return true; // Errors are present
+        try
+        {
+            auto json = nlohmann::json::parse(fileContent);
+            if (json.contains("Linker Error"))
+            {
+                std::cout << "Linker error detected." << std::endl;
+                return false; // Linker error present
+            }
+        }
+        catch (const nlohmann::json::parse_error &e)
+        {
+            std::cerr << "JSON parsing error: " << e.what() << std::endl;
+            return true; // Treat parsing error as presence of errors
+        }
+
+        std::cout << "Compilation errors present." << std::endl;
+        return true; // Other compilation errors are present
     }
 }
 
@@ -252,8 +286,8 @@ void runFlowScript(JobSystemAPI &jobSystem, const std::string &flowscriptText)
             // Short delay before starting the polling
             std::this_thread::sleep_for(std::chrono::seconds(2));
 
-            // Timeout duration is 10 seconds
-            const int timeoutDuration = 10;
+            // Timeout duration is 30 seconds
+            const int timeoutDuration = 30;
 
             // Start time for timeout calculation
             auto startTime = std::chrono::high_resolution_clock::now();

@@ -308,4 +308,4 @@ async function main() {
   }
 }
 
-main(); // Execute the main function
+main();

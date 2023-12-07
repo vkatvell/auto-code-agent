@@ -52,12 +52,20 @@ int main(void)
         }
     }
 
-    // TODO implement a cleanup function
-
     std::cout << "Execution complete!\nDestroying the Job System.\n"
               << std::endl;
 
     jobSystem.Destroy();
+
+    // List of files to clean up
+    std::vector<std::string> filesToCleanup = {
+        "code_change_descriptions.txt",
+        "corrected_code.json",
+        "correction_history.json",
+        "error_report.json"};
+
+    // Call cleanup function
+    cleanupDataFiles(filesToCleanup);
 
     return 0;
 }

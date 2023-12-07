@@ -10,4 +10,6 @@ bool hasCompilationErrors(const std::string &errorReportPath);
 void runFlowScript(JobSystemAPI &jobSystem, const std::string &flowscriptText);
 bool isFileUpdated(const std::string &filePath, const std::time_t &lastModifiedTime);
 
+void cleanupDataFiles(const std::vector<std::string> &fileNames);
+
 #endif // UTILS_H
