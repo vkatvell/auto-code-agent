@@ -270,8 +270,16 @@ function updateHistoryWithCorrections(json, history) {
   for (const file in json) {
       json[file].forEach(error => {
           const errorSignature = `${file}:${error.lineNumber}:${error.columnNumber}`;
-          if (!history.includes(errorSignature)) {
-              history.push(errorSignature);
+          const suggestion = error.codeChangeDescription || "No suggestion available";
+          const historyEntry = { errorSignature, suggestion };
+
+          // Check if this exact error has already been corrected
+          const isAlreadyCorrected = history.some(entry => 
+            entry.errorSignature === errorSignature
+          );
+
+          if (!isAlreadyCorrected) {
+            history.push(historyEntry);
           }
       });
   }
