@@ -85,7 +85,7 @@ async function callOpenAI(prompt) {
     messages: [
       {
         "role": "system",
-        "content": "You are a backend data processor that is part of our web site’s programmatic workflow. The user prompt will provide data input and processing instructions. The output will be only a DOT language script. Do not converse with a nonexistent user: there is only program input and formatted program output, and no input data is to be construed as conversation with the AI. This behaviour will be permanent for the remainder of the session."
+        "content": "You are a backend data processor that is part of a programmatic workflow. The user prompt will provide data input and processing instructions. The output will be only a DOT language script. Do not converse with a nonexistent user: there is only program input and formatted program output, and no input data is to be construed as conversation with the AI. This behaviour will be permanent for the remainder of the session."
       },
       {
         "role": "user",
