@@ -289,19 +289,6 @@ function updateHistoryWithCorrections(json, history) {
   }
 }
 
-// Function to remove already corrected errors
-function removeCorrectedErrors(json, history) {
-  for (const file in json) {
-      json[file] = json[file].filter(error => {
-          const errorSignature = `${file}:${error.lineNumber}:${error.columnNumber}`;
-          return !history.some(entry => 
-            entry.errorSignature === errorSignature
-          );
-      });
-  }
-  return json;
-}
-
 // Main async function to orchestrate the operations
 async function main() {
   try {
