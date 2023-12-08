@@ -170,11 +170,15 @@ async function readJsonFile(path) {
 async function generateInitialPrompt() {
   try {
     let json = await readJsonFile(path);
-    // Remove already corrected errors
-    json = removeCorrectedErrors(json, correctionHistory);
+
     const jsonString = JSON.stringify(json, null, 4);
 
-    let prompt = initialPromptTemplate + jsonString;
+    let historyString = 'Previously Suggested Changes:\n';
+    correctionHistory.forEach(entry => {
+      historyString += `- ${entry.errorSignature}: ${entry.suggestion}\n`;
+    });
+
+    let prompt = initialPromptTemplate + historyString + "\nCurrent Task:\n" + jsonString;
     return prompt;
   } catch (err) {
     console.error("Failed to generate prompt:", err);
