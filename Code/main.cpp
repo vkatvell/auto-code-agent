@@ -45,8 +45,9 @@ int main(int argc, char *argv[])
               << std::endl;
     jobSystem.QueueJob(flowscriptGenJobCreation["jobId"]);
 
+    // TODO wait for status of flowscriptGenJob to be complete to proceed
     // Introducing delay to wait for flowscript.dot file to be created
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::this_thread::sleep_for(std::chrono::seconds(15));
 
     // Register flowscript parse job type
     std::cout << "Registering custom flowscript parsing job\n"
@@ -56,6 +57,7 @@ int main(int argc, char *argv[])
 
     // Read in the file here and create JSON object input
     std::string errorReportPath = "./Data/error_report.json";
+
     std::ifstream dotFile("./Data/flowscript.dot");
 
     if (!dotFile.is_open())
@@ -93,7 +95,6 @@ int main(int argc, char *argv[])
               << std::endl;
     // List of files to clean up
     std::vector<std::string> filesToCleanup = {
-        "code_change_descriptions.txt",
         "corrected_code.json",
         "correction_history.json",
         "error_report.json"};

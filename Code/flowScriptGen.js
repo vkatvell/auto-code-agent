@@ -30,13 +30,13 @@ A FlowScript file starts with 'digraph {' and requires specific declarations for
 Your task is to generate a FlowScript for a job system handling 'XJob' ("compileJob"), 'YJob' ("compileParseJob"), and 'ZJob' ("parseOutputJob") based on these rules and the example. Ensure to maintain the structure and node types as described and return only the generated FlowScript without code block.
 
 Example Input:
-'XJob', 'XJobData: data={'command', 'clang++ -g -std=c++14 ./Code/automated/*.cpp -o auto_out'}','YJob', 'ZJob'
+'XJob', 'XJobData: data={'command', 'clang++ -g -std=c++14 ./Code/execute/*.cpp -o auto_out'}','YJob', 'ZJob'
 
 Example Output:
 digraph {
 {
 node[shape="circle"];
-XJobData[data="{'command', 'clang++ -g -std=c++14 ./Code/automated/*.cpp -o auto_out'}"];
+XJobData[data="{'command', 'clang++ -g -std=c++14 ./Code/execute/*.cpp -o auto_out'}"];
 }
 {
 node[shape="box"];
