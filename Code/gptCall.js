@@ -290,7 +290,9 @@ function removeCorrectedErrors(json, history) {
   for (const file in json) {
       json[file] = json[file].filter(error => {
           const errorSignature = `${file}:${error.lineNumber}:${error.columnNumber}`;
-          return !history.includes(errorSignature);
+          return !history.some(entry => 
+            entry.errorSignature === errorSignature
+          );
       });
   }
   return json;
