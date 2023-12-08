@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
     std::vector<std::string> filesToCleanup = {
         "corrected_code.json",
         "correction_history.json",
-        "error_report.json"};
+    };
 
     // Call cleanup function
     cleanupDataFiles(filesToCleanup);
