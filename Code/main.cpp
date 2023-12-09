@@ -13,9 +13,6 @@ int main(int argc, char *argv[])
     // Start the job system
     jobSystem.Start();
 
-    // TODO create a flowscript job that writes a flowscript job from LLM in javascript and writes to file fstest1.dot
-    // TODO register that job and queue it and run it. Then queue flowscriptJob
-
     // Parse command line arguments
     std::string filePathArg;
     if (argc > 1)
@@ -45,7 +42,6 @@ int main(int argc, char *argv[])
               << std::endl;
     jobSystem.QueueJob(flowscriptGenJobCreation["jobId"]);
 
-    // TODO wait for status of flowscriptGenJob to be complete to proceed
     // Introducing delay to wait for flowscript.dot file to be created
     std::this_thread::sleep_for(std::chrono::seconds(15));
 
