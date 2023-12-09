@@ -1,4 +1,4 @@
-int main()
+int run()
 {
     int variable = 1;
     varble += 1;
