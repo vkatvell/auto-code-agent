@@ -242,7 +242,7 @@ void runFlowScript(JobSystemAPI &jobSystem, const std::string &flowscriptText)
         registerAndQueueJobs(&jobSystem, flowscriptJobOutput);
 
         // Waiting for compile flow to complete and for error_report.json to be closed
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::seconds(3));
 
         // Check for compilation errors using hasCompilationErrors function
         if (!hasCompilationErrors("./Data/error_report.json"))
