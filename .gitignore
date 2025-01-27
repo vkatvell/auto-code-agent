@@ -1,0 +1,11 @@
+# Node modules folder
+node_modules/
+# Environment variables
+.env
+# Miscellaneous
+app
+.vscode/
+auto_out
+auto_out.dSYM/
+
+
